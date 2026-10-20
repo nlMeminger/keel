@@ -1,22 +1,19 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen } from '@testing-library/react'
+import { screen } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import App from './App'
 import { AuthProvider } from './features/auth/auth-context'
+import { renderWithProviders } from './test/render'
 import { server } from './test/mocks/server'
 
 function renderApp(initialPath = '/') {
-  const queryClient = new QueryClient()
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <MemoryRouter initialEntries={[initialPath]}>
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </MemoryRouter>
-    </QueryClientProvider>,
+  return renderWithProviders(
+    <MemoryRouter initialEntries={[initialPath]}>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </MemoryRouter>,
   )
 }
 
@@ -52,7 +49,7 @@ describe('App', () => {
       ),
     )
     renderApp('/')
-    expect(await screen.findByRole('heading', { name: 'Money App' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Keel' })).toBeInTheDocument()
     expect(await screen.findByText('Welcome, Ada.')).toBeInTheDocument()
   })
 })

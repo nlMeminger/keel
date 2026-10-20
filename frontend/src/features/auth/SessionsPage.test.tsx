@@ -1,18 +1,13 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it, vi } from 'vitest'
+import { renderWithProviders } from '../../test/render'
 import { server } from '../../test/mocks/server'
 import { SessionsPage } from './SessionsPage'
 
 function renderSessionsPage() {
-  const queryClient = new QueryClient()
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <SessionsPage />
-    </QueryClientProvider>,
-  )
+  return renderWithProviders(<SessionsPage />)
 }
 
 const sessions = [

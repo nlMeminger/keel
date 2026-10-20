@@ -1,7 +1,7 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import { http, HttpResponse } from 'msw'
 import { describe, expect, it } from 'vitest'
+import { renderWithProviders } from '../test/render'
 import { server } from '../test/mocks/server'
 import { computeRefetchInterval, useJobPolling, type JobStatus } from './use-job-polling'
 
@@ -44,12 +44,7 @@ function JobStatusHarness({ jobId }: { jobId: string }) {
 }
 
 function renderHarness(jobId: string) {
-  const queryClient = new QueryClient()
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <JobStatusHarness jobId={jobId} />
-    </QueryClientProvider>,
-  )
+  return renderWithProviders(<JobStatusHarness jobId={jobId} />)
 }
 
 describe('useJobPolling', () => {
