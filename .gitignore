@@ -4,17 +4,28 @@ __pycache__/
 .venv/
 venv/
 *.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
 
 # Node
 node_modules/
 dist/
 build/
+.vite/
 
 # Env / secrets
 .env
 .env.*
+!.env.example
 config.yaml
 !config.yaml.example
+*.pem
+*.key
+credentials.json
+service-account*.json
 
 # Editor / OS
 .vscode/
