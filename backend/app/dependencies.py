@@ -1,5 +1,6 @@
-from fastapi import Depends
+from fastapi import Depends, Query
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.auth.models import User
@@ -8,6 +9,19 @@ from app.core.security import decode_access_token
 from app.database import get_db
 
 bearer_scheme = HTTPBearer(auto_error=False)
+
+
+class PaginationParams(BaseModel):
+    page: int
+    page_size: int
+
+
+def pagination_params(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(25, ge=1, le=200),
+) -> PaginationParams:
+    """Shared `?page=&page_size=` dependency for every real (non-`single_page`) list route."""
+    return PaginationParams(page=page, page_size=page_size)
 
 
 def get_current_user(
