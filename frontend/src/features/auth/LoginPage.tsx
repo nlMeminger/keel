@@ -1,3 +1,4 @@
+import { Anchor, Button, Paper, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ApiError } from '../../lib/api-client'
@@ -20,41 +21,43 @@ export function LoginPage() {
   }
 
   return (
-    <main>
-      <h1>Log in</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label htmlFor="password">Password</label>
-          <input
-            id="password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        {login.isError && (
-          <p role="alert">
-            {login.error instanceof ApiError ? login.error.message : 'Login failed.'}
-          </p>
-        )}
-        <button type="submit" disabled={login.isPending}>
-          {login.isPending ? 'Logging in…' : 'Log in'}
-        </button>
-      </form>
-      <p>
-        No account? <Link to="/register">Register</Link>
-      </p>
-    </main>
+    <Stack align="center" justify="center" mih="100vh" p="md">
+      <Paper withBorder shadow="sm" p="xl" radius="md" w={360}>
+        <Title order={1} size="h2" ta="center" mb="lg">
+          Log in
+        </Title>
+        <form onSubmit={handleSubmit}>
+          <Stack>
+            <TextInput
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.currentTarget.value)}
+              required
+            />
+            <PasswordInput
+              label="Password"
+              value={password}
+              onChange={(event) => setPassword(event.currentTarget.value)}
+              required
+            />
+            {login.isError && (
+              <Text role="alert" c="red" size="sm">
+                {login.error instanceof ApiError ? login.error.message : 'Login failed.'}
+              </Text>
+            )}
+            <Button type="submit" loading={login.isPending} fullWidth>
+              Log in
+            </Button>
+          </Stack>
+        </form>
+        <Text size="sm" ta="center" mt="md">
+          No account?{' '}
+          <Anchor component={Link} to="/register">
+            Register
+          </Anchor>
+        </Text>
+      </Paper>
+    </Stack>
   )
 }

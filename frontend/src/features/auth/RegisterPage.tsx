@@ -1,3 +1,4 @@
+import { Anchor, Button, Paper, PasswordInput, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useState, type FormEvent } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ApiError } from '../../lib/api-client'
@@ -21,46 +22,52 @@ export function RegisterPage() {
   }
 
   return (
-    <main>
-      <h1>Register</h1>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="name">Name</label>
-          <input id="name" value={name} onChange={(e) => setName(e.target.value)} required />
-        </div>
-        <div>
-          <label htmlFor="email">Email</label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label htmlFor="password">Password</label>
-          <input
-            id="password"
-            type="password"
-            minLength={8}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-        </div>
-        {register.isError && (
-          <p role="alert">
-            {register.error instanceof ApiError ? register.error.message : 'Registration failed.'}
-          </p>
-        )}
-        <button type="submit" disabled={register.isPending}>
-          {register.isPending ? 'Registering…' : 'Register'}
-        </button>
-      </form>
-      <p>
-        Already have an account? <Link to="/login">Log in</Link>
-      </p>
-    </main>
+    <Stack align="center" justify="center" mih="100vh" p="md">
+      <Paper withBorder shadow="sm" p="xl" radius="md" w={360}>
+        <Title order={1} size="h2" ta="center" mb="lg">
+          Register
+        </Title>
+        <form onSubmit={handleSubmit}>
+          <Stack>
+            <TextInput
+              label="Name"
+              value={name}
+              onChange={(event) => setName(event.currentTarget.value)}
+              required
+            />
+            <TextInput
+              label="Email"
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.currentTarget.value)}
+              required
+            />
+            <PasswordInput
+              label="Password"
+              minLength={8}
+              value={password}
+              onChange={(event) => setPassword(event.currentTarget.value)}
+              required
+            />
+            {register.isError && (
+              <Text role="alert" c="red" size="sm">
+                {register.error instanceof ApiError
+                  ? register.error.message
+                  : 'Registration failed.'}
+              </Text>
+            )}
+            <Button type="submit" loading={register.isPending} fullWidth>
+              Register
+            </Button>
+          </Stack>
+        </form>
+        <Text size="sm" ta="center" mt="md">
+          Already have an account?{' '}
+          <Anchor component={Link} to="/login">
+            Log in
+          </Anchor>
+        </Text>
+      </Paper>
+    </Stack>
   )
 }

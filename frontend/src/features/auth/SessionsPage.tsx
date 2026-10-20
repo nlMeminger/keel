@@ -1,3 +1,4 @@
+import { Badge, Button, Group, Paper, Stack, Text, Title } from '@mantine/core'
 import { useRevokeOtherSessions, useRevokeSession, useSessions } from './api'
 
 export function SessionsPage() {
@@ -6,33 +7,51 @@ export function SessionsPage() {
   const revokeOthers = useRevokeOtherSessions()
 
   if (isLoading || !sessions) {
-    return <p>Loading sessions…</p>
+    return <Text>Loading sessions…</Text>
   }
 
   return (
-    <main>
-      <h1>Active sessions</h1>
-      <button type="button" onClick={() => revokeOthers.mutate()} disabled={revokeOthers.isPending}>
-        Log out everywhere else
-      </button>
-      <ul>
+    <Stack>
+      <Group justify="space-between">
+        <Title order={1} size="h2">
+          Active sessions
+        </Title>
+        <Button
+          variant="light"
+          color="red"
+          onClick={() => revokeOthers.mutate()}
+          loading={revokeOthers.isPending}
+        >
+          Log out everywhere else
+        </Button>
+      </Group>
+      <Stack gap="sm">
         {sessions.map((session) => (
-          <li key={session.id}>
-            {session.user_agent ?? 'Unknown device'}
-            {session.is_current ? ' (this session)' : ''} — created{' '}
-            {new Date(session.created_at).toLocaleString()}
-            {!session.is_current && (
-              <button
-                type="button"
-                onClick={() => revokeSession.mutate(session.id)}
-                disabled={revokeSession.isPending}
-              >
-                Revoke
-              </button>
-            )}
-          </li>
+          <Paper key={session.id} withBorder p="md" radius="md">
+            <Group justify="space-between">
+              <div>
+                <Group gap="xs">
+                  <Text fw={500}>{session.user_agent ?? 'Unknown device'}</Text>
+                  {session.is_current && <Badge size="sm">this session</Badge>}
+                </Group>
+                <Text size="sm" c="dimmed">
+                  Created {new Date(session.created_at).toLocaleString()}
+                </Text>
+              </div>
+              {!session.is_current && (
+                <Button
+                  variant="subtle"
+                  color="red"
+                  onClick={() => revokeSession.mutate(session.id)}
+                  loading={revokeSession.isPending}
+                >
+                  Revoke
+                </Button>
+              )}
+            </Group>
+          </Paper>
         ))}
-      </ul>
-    </main>
+      </Stack>
+    </Stack>
   )
 }
