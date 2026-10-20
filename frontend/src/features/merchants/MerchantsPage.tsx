@@ -1,3 +1,4 @@
+import { Button, Group, Paper, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useState } from 'react'
 import {
   type Merchant,
@@ -33,20 +34,22 @@ function CreateMerchantForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Add merchant</h2>
-      <label>
-        Name
-        <input value={name} onChange={(e) => setName(e.target.value)} required />
-      </label>
-      <label>
-        Aliases (comma-separated)
-        <input value={aliasesText} onChange={(e) => setAliasesText(e.target.value)} />
-      </label>
-      <button type="submit" disabled={createMerchant.isPending}>
-        Add merchant
-      </button>
-    </form>
+    <Paper withBorder p="lg" radius="md" component="form" onSubmit={handleSubmit}>
+      <Stack>
+        <Title order={2} size="h4">
+          Add merchant
+        </Title>
+        <TextInput label="Name" value={name} onChange={(e) => setName(e.target.value)} required />
+        <TextInput
+          label="Aliases (comma-separated)"
+          value={aliasesText}
+          onChange={(e) => setAliasesText(e.target.value)}
+        />
+        <Button type="submit" loading={createMerchant.isPending}>
+          Add merchant
+        </Button>
+      </Stack>
+    </Paper>
   )
 }
 
@@ -65,35 +68,48 @@ function MerchantRow({ merchant }: { merchant: Merchant }) {
   }
 
   return (
-    <li>
+    <Paper component="li" withBorder p="md" radius="md" style={{ listStyle: 'none' }}>
       {editing ? (
-        <>
-          <input value={name} onChange={(e) => setName(e.target.value)} />
-          <input value={aliasesText} onChange={(e) => setAliasesText(e.target.value)} />
-          <button type="button" onClick={handleSave} disabled={updateMerchant.isPending}>
+        <Group>
+          <TextInput value={name} onChange={(e) => setName(e.target.value)} />
+          <TextInput value={aliasesText} onChange={(e) => setAliasesText(e.target.value)} />
+          <Button size="sm" onClick={handleSave} loading={updateMerchant.isPending}>
             Save
-          </button>
-          <button type="button" onClick={() => setEditing(false)}>
+          </Button>
+          <Button size="sm" variant="subtle" onClick={() => setEditing(false)}>
             Cancel
-          </button>
-        </>
+          </Button>
+        </Group>
       ) : (
-        <>
-          <strong>{merchant.name}</strong>
-          {merchant.aliases.length > 0 && ` (${merchant.aliases.join(', ')})`}
-          <button type="button" onClick={() => setEditing(true)}>
-            Edit
-          </button>
-          <button
-            type="button"
-            onClick={() => deleteMerchant.mutate(merchant.id)}
-            disabled={deleteMerchant.isPending}
-          >
-            Delete
-          </button>
-        </>
+        <Group justify="space-between">
+          <Text>
+            <Text component="span" fw={500}>
+              {merchant.name}
+            </Text>
+            {merchant.aliases.length > 0 && (
+              <Text component="span" c="dimmed">
+                {' '}
+                ({merchant.aliases.join(', ')})
+              </Text>
+            )}
+          </Text>
+          <Group gap="xs">
+            <Button size="sm" variant="subtle" onClick={() => setEditing(true)}>
+              Edit
+            </Button>
+            <Button
+              size="sm"
+              variant="subtle"
+              color="red"
+              onClick={() => deleteMerchant.mutate(merchant.id)}
+              loading={deleteMerchant.isPending}
+            >
+              Delete
+            </Button>
+          </Group>
+        </Group>
       )}
-    </li>
+    </Paper>
   )
 }
 
@@ -101,18 +117,18 @@ export function MerchantsPage() {
   const { data: merchants, isLoading } = useMerchants()
 
   return (
-    <main>
-      <h1>Merchants</h1>
+    <Stack>
+      <Title order={1}>Merchants</Title>
       <CreateMerchantForm />
       {isLoading || !merchants ? (
-        <p>Loading merchants…</p>
+        <Text>Loading merchants…</Text>
       ) : (
-        <ul>
+        <Stack gap="sm" component="ul" style={{ padding: 0 }}>
           {merchants.map((merchant) => (
             <MerchantRow key={merchant.id} merchant={merchant} />
           ))}
-        </ul>
+        </Stack>
       )}
-    </main>
+    </Stack>
   )
 }
