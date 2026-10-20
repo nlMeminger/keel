@@ -4,6 +4,7 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 from app.accounts import models as accounts_models  # noqa: F401
+from app.assets import models as assets_models  # noqa: F401
 from app.auth import models as auth_models  # noqa: F401
 from app.categories import models as categories_models  # noqa: F401
 from app.config import settings
