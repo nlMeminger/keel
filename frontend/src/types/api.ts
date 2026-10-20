@@ -323,6 +323,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/accounts/{account_id}/holdings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Holdings */
+        get: operations["list_holdings_api_v1_accounts__account_id__holdings_get"];
+        put?: never;
+        /** Create Holding */
+        post: operations["create_holding_api_v1_accounts__account_id__holdings_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/accounts/{account_id}/holdings/{holding_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Holding */
+        delete: operations["delete_holding_api_v1_accounts__account_id__holdings__holding_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Holding */
+        patch: operations["update_holding_api_v1_accounts__account_id__holdings__holding_id__patch"];
+        trace?: never;
+    };
     "/api/v1/merchants": {
         parameters: {
             query?: never;
@@ -726,6 +762,10 @@ export interface components {
         Envelope_CategoryPublic_: {
             data: components["schemas"]["CategoryPublic"];
         };
+        /** Envelope[HoldingPublic] */
+        Envelope_HoldingPublic_: {
+            data: components["schemas"]["HoldingPublic"];
+        };
         /** Envelope[JobStatus] */
         Envelope_JobStatus_: {
             data: components["schemas"]["JobStatus"];
@@ -779,6 +819,67 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HoldingCreateRequest */
+        HoldingCreateRequest: {
+            /** Symbol */
+            symbol: string;
+            /** Name */
+            name: string;
+            /** Quantity */
+            quantity: number | string;
+            /** Cost Basis */
+            cost_basis: number | string;
+        };
+        /** HoldingPublic */
+        HoldingPublic: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Security Id */
+            security_id: string | null;
+            /** Symbol */
+            symbol: string;
+            /** Name */
+            name: string;
+            /** Quantity */
+            quantity: string;
+            /** Cost Basis */
+            cost_basis: string;
+            /** Current Value */
+            current_value: string | null;
+            /** Source */
+            source: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** HoldingUpdateRequest */
+        HoldingUpdateRequest: {
+            /** Symbol */
+            symbol?: string | null;
+            /** Name */
+            name?: string | null;
+            /** Quantity */
+            quantity?: number | string | null;
+            /** Cost Basis */
+            cost_basis?: number | string | null;
+            /** Current Value */
+            current_value?: number | string | null;
         };
         /** JobProgress */
         JobProgress: {
@@ -2085,6 +2186,143 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Envelope_SavingsGoalPublic_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_holdings_api_v1_accounts__account_id__holdings_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_holding_api_v1_accounts__account_id__holdings_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HoldingCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_HoldingPublic_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_holding_api_v1_accounts__account_id__holdings__holding_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                holding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_holding_api_v1_accounts__account_id__holdings__holding_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                account_id: string;
+                holding_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HoldingUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_HoldingPublic_"];
                 };
             };
             /** @description Validation Error */
