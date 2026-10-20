@@ -1,3 +1,17 @@
+x-backend-env: &backend-env
+  DATABASE_URL: postgresql+psycopg://moneyapp:moneyapp@postgres:5432/moneyapp
+  REDIS_URL: redis://redis:6379/0
+  CELERY_BROKER_URL: redis://redis:6379/2
+  CELERY_RESULT_BACKEND: redis://redis:6379/3
+  JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:-dev-only-insecure-key-change-me-32-bytes-min}
+  ENCRYPTION_KEY: ${ENCRYPTION_KEY:-dev-only-insecure-key-change-me-32bytes!}
+  CORS_ORIGINS: '["http://localhost:5173"]'
+  ENVIRONMENT: development
+
+x-backend-volumes: &backend-volumes
+  - ./backend:/app
+  - backend_venv:/app/.venv
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -28,18 +42,10 @@ services:
 
   backend:
     build: ./backend
-    environment:
-      DATABASE_URL: postgresql+psycopg://moneyapp:moneyapp@postgres:5432/moneyapp
-      REDIS_URL: redis://redis:6379/0
-      JWT_SIGNING_KEY: ${JWT_SIGNING_KEY:-dev-only-insecure-key-change-me-32-bytes-min}
-      ENCRYPTION_KEY: ${ENCRYPTION_KEY:-dev-only-insecure-key-change-me-32bytes!}
-      CORS_ORIGINS: '["http://localhost:5173"]'
-      ENVIRONMENT: development
+    environment: *backend-env
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/app
-      - backend_venv:/app/.venv
+    volumes: *backend-volumes
     depends_on:
       postgres:
         condition: service_healthy
@@ -50,6 +56,28 @@ services:
       interval: 3s
       timeout: 3s
       retries: 20
+
+  celery-worker:
+    build: ./backend
+    command: uv run celery -A app.celery_app worker --loglevel=info
+    environment: *backend-env
+    volumes: *backend-volumes
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery-beat:
+    build: ./backend
+    command: uv run celery -A app.celery_app beat --loglevel=info
+    environment: *backend-env
+    volumes: *backend-volumes
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   frontend:
     build: ./frontend

@@ -51,6 +51,12 @@ exclude = ["alembic/"]
 module = "celery.*"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+# celery's @task decorator has no type stubs, so every task module trips strict's
+# disallow_untyped_decorators — relax just that one check for task modules.
+module = "app.*.tasks"
+disallow_untyped_decorators = false
+
 [tool.pytest.ini_options]
 pythonpath = ["."]
 

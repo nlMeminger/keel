@@ -8,6 +8,8 @@ class Settings(BaseSettings):
 
     database_url: str = "postgresql+psycopg://moneyapp:moneyapp@localhost:5432/moneyapp"
     redis_url: str = "redis://localhost:6379/0"
+    celery_broker_url: str = "redis://localhost:6379/2"
+    celery_result_backend: str = "redis://localhost:6379/3"
 
     jwt_signing_key: str = "dev-only-insecure-key-change-me-32-bytes-min"
     jwt_algorithm: str = "HS256"

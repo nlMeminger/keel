@@ -6,10 +6,16 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.celery_app import celery_app
 from app.config import settings
 from app.core import rate_limit
 from app.database import Base, get_db
 from app.main import app
+
+# Tests never depend on a separately running Celery worker process (CI doesn't start one) —
+# run tasks synchronously, in-process, instead.
+celery_app.conf.task_always_eager = True
+celery_app.conf.task_eager_propagates = True
 
 
 def _test_database_url(base_url: str) -> str:

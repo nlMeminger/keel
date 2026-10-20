@@ -9,6 +9,7 @@ venv/
 .ruff_cache/
 htmlcov/
 .coverage
+celerybeat-schedule
 
 # Node
 node_modules/
