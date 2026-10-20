@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session as DbSession
 from app.auth.models import Session, User
 from app.config import settings
 from app.core.errors import AppError
+from app.core.rate_limit import REFRESH_LIMIT, enforce_rate_limit
 from app.core.security import generate_opaque_token, hash_password, hash_token, verify_password
 
 REFRESH_COOKIE_NAME = "refresh_token"
@@ -91,8 +92,12 @@ def rotate_refresh_token(
         raise AppError(401, "invalid_token", "Invalid refresh token.")
 
     if session.revoked_at is not None:
+        # Theft detection always fires, even over the rate limit below — never silently
+        # swallow a replayed/stolen token just because the attacker hit the request cap.
         _revoke_family(db, session.family_id)
         raise AppError(401, "session_revoked", "Session revoked. Please log in again.")
+
+    enforce_rate_limit(f"ratelimit:refresh:{session.user_id}", *REFRESH_LIMIT)
 
     now = datetime.now(UTC)
     if session.expires_at < now:

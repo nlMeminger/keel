@@ -7,6 +7,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.config import settings
+from app.core import rate_limit
 from app.database import Base, get_db
 from app.main import app
 
@@ -16,6 +17,12 @@ def _test_database_url(base_url: str) -> str:
     parts = urlsplit(base_url)
     test_path = f"{parts.path}_test"
     return urlunsplit((parts.scheme, parts.netloc, test_path, parts.query, parts.fragment))
+
+
+def _test_redis_url(base_url: str) -> str:
+    """Point at a different logical Redis DB (1, not dev's 0) so rate-limit counters don't leak."""
+    parts = urlsplit(base_url)
+    return urlunsplit((parts.scheme, parts.netloc, "/1", parts.query, parts.fragment))
 
 
 test_engine = create_engine(_test_database_url(settings.database_url))
@@ -28,6 +35,16 @@ def _reset_schema() -> Generator[None, None, None]:
     Base.metadata.drop_all(bind=test_engine)
     Base.metadata.create_all(bind=test_engine)
     yield
+
+
+@pytest.fixture(autouse=True)
+def _reset_redis() -> Generator[None, None, None]:
+    """Flush rate-limit counters between tests, isolated from dev's Redis DB 0."""
+    original_url = settings.redis_url
+    settings.redis_url = _test_redis_url(original_url)
+    rate_limit.get_redis().flushdb()
+    yield
+    settings.redis_url = original_url
 
 
 @pytest.fixture

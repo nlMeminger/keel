@@ -19,6 +19,7 @@ from app.auth.schemas import (
 from app.config import settings
 from app.core.envelope import Envelope, single_page
 from app.core.errors import AppError
+from app.core.rate_limit import LOGIN_LIMIT, REGISTER_LIMIT, enforce_rate_limit
 from app.core.security import create_access_token, hash_token
 from app.database import get_db
 from app.dependencies import get_current_user
@@ -52,7 +53,10 @@ def _client_ip(request: Request) -> str | None:
 
 
 @router.post("/register", response_model=Envelope[UserPublic], status_code=status.HTTP_201_CREATED)
-def register(body: RegisterRequest, db: DbSession = Depends(get_db)) -> dict[str, UserPublic]:
+def register(
+    body: RegisterRequest, request: Request, db: DbSession = Depends(get_db)
+) -> dict[str, UserPublic]:
+    enforce_rate_limit(f"ratelimit:register:{_client_ip(request)}", *REGISTER_LIMIT)
     user = service.register_user(db, email=body.email, password=body.password, name=body.name)
     return {"data": UserPublic.model_validate(user)}
 
@@ -61,6 +65,7 @@ def register(body: RegisterRequest, db: DbSession = Depends(get_db)) -> dict[str
 def login(
     body: LoginRequest, request: Request, response: Response, db: DbSession = Depends(get_db)
 ) -> dict[str, LoginResponseData]:
+    enforce_rate_limit(f"ratelimit:login:{_client_ip(request)}:{body.email}", *LOGIN_LIMIT)
     user = service.authenticate_user(db, email=body.email, password=body.password)
     session, raw_token = service.create_session(
         db, user, user_agent=request.headers.get("user-agent"), ip_address=_client_ip(request)
