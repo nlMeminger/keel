@@ -198,6 +198,42 @@ export interface paths {
         patch: operations["update_me_api_v1_auth_me_patch"];
         trace?: never;
     };
+    "/api/v1/budgets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Budgets */
+        get: operations["list_budgets_api_v1_budgets_get"];
+        put?: never;
+        /** Create Budget */
+        post: operations["create_budget_api_v1_budgets_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/budgets/{budget_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Budget */
+        delete: operations["delete_budget_api_v1_budgets__budget_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Budget */
+        patch: operations["update_budget_api_v1_budgets__budget_id__patch"];
+        trace?: never;
+    };
     "/api/v1/categories": {
         parameters: {
             query?: never;
@@ -511,6 +547,62 @@ export interface components {
             /** Current Value */
             current_value?: number | string | null;
         };
+        /** BudgetCreateRequest */
+        BudgetCreateRequest: {
+            /** Category Id */
+            category_id?: string | null;
+            /** Amount Limit */
+            amount_limit: number | string;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+        };
+        /** BudgetPublic */
+        BudgetPublic: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Category Id */
+            category_id: string | null;
+            /** Amount Limit */
+            amount_limit: string;
+            /** Period */
+            period: string;
+            /**
+             * Start Date
+             * Format: date
+             */
+            start_date: string;
+            /** Spend So Far */
+            spend_so_far: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * BudgetUpdateRequest
+         * @description category_id uses exclude_unset in the router so an explicit null (switch to an
+         *     overall budget) is distinguishable from an omitted field (leave scope untouched).
+         */
+        BudgetUpdateRequest: {
+            /** Category Id */
+            category_id?: string | null;
+            /** Amount Limit */
+            amount_limit?: number | string | null;
+            /** Start Date */
+            start_date?: string | null;
+        };
         /** CategoryCreateRequest */
         CategoryCreateRequest: {
             /** Primary Category */
@@ -572,6 +664,10 @@ export interface components {
         /** Envelope[AssetPublic] */
         Envelope_AssetPublic_: {
             data: components["schemas"]["AssetPublic"];
+        };
+        /** Envelope[BudgetPublic] */
+        Envelope_BudgetPublic_: {
+            data: components["schemas"]["BudgetPublic"];
         };
         /** Envelope[CategoryPublic] */
         Envelope_CategoryPublic_: {
@@ -1443,6 +1539,137 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Envelope_UserPublic_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_budgets_api_v1_budgets_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_budget_api_v1_budgets_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BudgetCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_BudgetPublic_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_budget_api_v1_budgets__budget_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                budget_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_budget_api_v1_budgets__budget_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                budget_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BudgetUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_BudgetPublic_"];
                 };
             };
             /** @description Validation Error */
