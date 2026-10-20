@@ -251,6 +251,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Transactions */
+        get: operations["list_transactions_api_v1_transactions_get"];
+        put?: never;
+        /** Create Transaction */
+        post: operations["create_transaction_api_v1_transactions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/transactions/{transaction_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Transaction */
+        get: operations["get_transaction_api_v1_transactions__transaction_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Transaction */
+        delete: operations["delete_transaction_api_v1_transactions__transaction_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Transaction */
+        patch: operations["update_transaction_api_v1_transactions__transaction_id__patch"];
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -421,6 +458,10 @@ export interface components {
         Envelope_SuccessResponse_: {
             data: components["schemas"]["SuccessResponse"];
         };
+        /** Envelope[TransactionPublic] */
+        Envelope_TransactionPublic_: {
+            data: components["schemas"]["TransactionPublic"];
+        };
         /** Envelope[UserPublic] */
         Envelope_UserPublic_: {
             data: components["schemas"]["UserPublic"];
@@ -539,6 +580,94 @@ export interface components {
              * @default true
              */
             success: boolean;
+        };
+        /** TransactionCreateRequest */
+        TransactionCreateRequest: {
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Category Id */
+            category_id?: string | null;
+            /** Merchant Id */
+            merchant_id?: string | null;
+            /** Amount */
+            amount: number | string;
+            /** Description */
+            description: string;
+            /** Notes */
+            notes?: string | null;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /**
+             * Pending
+             * @default false
+             */
+            pending: boolean;
+        };
+        /** TransactionPublic */
+        TransactionPublic: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Category Id */
+            category_id: string | null;
+            /** Merchant Id */
+            merchant_id: string | null;
+            /** Amount */
+            amount: string;
+            /** Description */
+            description: string;
+            /** Notes */
+            notes: string | null;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Pending */
+            pending: boolean;
+            /** Is Transfer */
+            is_transfer: boolean;
+            /** Paired Transaction Id */
+            paired_transaction_id: string | null;
+            /** Transfer Status */
+            transfer_status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * TransactionUpdateRequest
+         * @description category_id/merchant_id/notes are all cleared-to-null-vs-omitted via `exclude_unset`
+         *     in the router, not a plain `is not None` check — a client explicitly uncategorizing a
+         *     transaction must be distinguishable from one that simply didn't touch the field.
+         */
+        TransactionUpdateRequest: {
+            /** Category Id */
+            category_id?: string | null;
+            /** Merchant Id */
+            merchant_id?: string | null;
+            /** Notes */
+            notes?: string | null;
         };
         /** UserPublic */
         UserPublic: {
@@ -1264,6 +1393,179 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Envelope_JobStatus_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_transactions_api_v1_transactions_get: {
+        parameters: {
+            query?: {
+                account_id?: string | null;
+                category_id?: string | null;
+                merchant?: string | null;
+                description?: string | null;
+                amount_min?: number | string | null;
+                amount_max?: number | string | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                pending?: boolean | null;
+                transfer_status?: ("none" | "suggested" | "confirmed" | "rejected") | null;
+                sort?: "date_asc" | "date_desc" | "amount_asc" | "amount_desc";
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_transaction_api_v1_transactions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransactionCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_TransactionPublic_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_transaction_api_v1_transactions__transaction_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transaction_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_TransactionPublic_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_transaction_api_v1_transactions__transaction_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transaction_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_transaction_api_v1_transactions__transaction_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                transaction_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TransactionUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_TransactionPublic_"];
                 };
             };
             /** @description Validation Error */
