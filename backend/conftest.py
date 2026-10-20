@@ -1,4 +1,5 @@
-from collections.abc import Generator
+import uuid
+from collections.abc import Callable, Generator
 from urllib.parse import urlsplit, urlunsplit
 
 import pytest
@@ -75,3 +76,22 @@ def client() -> Generator[TestClient, None, None]:
     with TestClient(app) as test_client:
         yield test_client
     app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def register_and_login(client: TestClient) -> Callable[[str], tuple[str, uuid.UUID]]:
+    """Registers+logs in a fresh user, returning (access_token, user_id) — the standard way
+    every resource's ownership tests get a second, independent caller to test against."""
+
+    def _do(email: str) -> tuple[str, uuid.UUID]:
+        client.post(
+            "/api/v1/auth/register",
+            json={"email": email, "password": "correct-password", "name": "Tester"},
+        )
+        login = client.post(
+            "/api/v1/auth/login", json={"email": email, "password": "correct-password"}
+        )
+        data = login.json()["data"]
+        return data["access_token"], uuid.UUID(data["user"]["id"])
+
+    return _do

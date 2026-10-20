@@ -1,4 +1,5 @@
 import uuid
+from collections.abc import Callable
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session as DbSession
@@ -8,20 +9,10 @@ from app.jobs.service import create_job, run_job
 from conftest import TestSessionLocal
 
 
-def _register_and_login(client: TestClient, email: str) -> tuple[str, uuid.UUID]:
-    client.post(
-        "/api/v1/auth/register",
-        json={"email": email, "password": "correct-password", "name": "Tester"},
-    )
-    login = client.post("/api/v1/auth/login", json={"email": email, "password": "correct-password"})
-    data = login.json()["data"]
-    return data["access_token"], uuid.UUID(data["user"]["id"])
-
-
 def test_poll_pending_then_running_then_terminal_exactly_once(
-    client: TestClient, db: DbSession
+    client: TestClient, db: DbSession, register_and_login: Callable[[str], tuple[str, uuid.UUID]]
 ) -> None:
-    token, user_id = _register_and_login(client, "poller@example.com")
+    token, user_id = register_and_login("poller@example.com")
     headers = {"Authorization": f"Bearer {token}"}
 
     job = create_job(db, "bulk_import", owner_id=user_id)
@@ -51,8 +42,10 @@ def test_poll_pending_then_running_then_terminal_exactly_once(
     assert second_poll.json()["data"]["status"] == "succeeded"
 
 
-def test_failed_job_reports_terminal_status_and_error(client: TestClient, db: DbSession) -> None:
-    token, user_id = _register_and_login(client, "failer@example.com")
+def test_failed_job_reports_terminal_status_and_error(
+    client: TestClient, db: DbSession, register_and_login: Callable[[str], tuple[str, uuid.UUID]]
+) -> None:
+    token, user_id = register_and_login("failer@example.com")
     headers = {"Authorization": f"Bearer {token}"}
 
     job = create_job(db, "transaction_sync", owner_id=user_id)
@@ -72,20 +65,24 @@ def test_failed_job_reports_terminal_status_and_error(client: TestClient, db: Db
 
 
 def test_a_second_users_token_cannot_see_the_first_users_job(
-    client: TestClient, db: DbSession
+    client: TestClient,
+    db: DbSession,
+    register_and_login: Callable[[str], tuple[str, uuid.UUID]],
 ) -> None:
-    _owner_token, owner_id = _register_and_login(client, "job-owner@example.com")
+    _owner_token, owner_id = register_and_login("job-owner@example.com")
     job = create_job(db, "bulk_import", owner_id=owner_id)
 
-    intruder_token, _intruder_id = _register_and_login(client, "job-intruder@example.com")
+    intruder_token, _intruder_id = register_and_login("job-intruder@example.com")
     resp = client.get(
         f"/api/v1/sync/jobs/{job.id}", headers={"Authorization": f"Bearer {intruder_token}"}
     )
     assert resp.status_code == 404
 
 
-def test_nonexistent_job_returns_404(client: TestClient) -> None:
-    token, _user_id = _register_and_login(client, "nobody@example.com")
+def test_nonexistent_job_returns_404(
+    client: TestClient, register_and_login: Callable[[str], tuple[str, uuid.UUID]]
+) -> None:
+    token, _user_id = register_and_login("nobody@example.com")
     resp = client.get(
         f"/api/v1/sync/jobs/{uuid.uuid4()}", headers={"Authorization": f"Bearer {token}"}
     )
