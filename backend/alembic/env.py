@@ -6,6 +6,7 @@ from alembic import context
 from app.auth import models as auth_models  # noqa: F401
 from app.config import settings
 from app.database import Base
+from app.jobs import models as jobs_models  # noqa: F401
 
 # Import every domain's models module here so autogenerate can see their tables.
 
