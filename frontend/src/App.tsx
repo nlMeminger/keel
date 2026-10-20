@@ -1,5 +1,6 @@
 import { Link, Route, Routes, useNavigate } from 'react-router-dom'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { AccountsPage } from './features/accounts/AccountsPage'
 import { useLogout, useMe } from './features/auth/api'
 import { LoginPage } from './features/auth/LoginPage'
 import { RegisterPage } from './features/auth/RegisterPage'
@@ -15,6 +16,7 @@ function Home() {
       <h1>Money App</h1>
       {user && <p>Welcome, {user.name}.</p>}
       <nav>
+        <Link to="/accounts">Accounts</Link>
         <Link to="/settings/sessions">Sessions</Link>
       </nav>
       <button
@@ -35,6 +37,7 @@ function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<Home />} />
+        <Route path="/accounts" element={<AccountsPage />} />
         <Route path="/settings/sessions" element={<SessionsPage />} />
       </Route>
     </Routes>
