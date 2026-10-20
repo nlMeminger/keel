@@ -270,6 +270,59 @@ export interface paths {
         patch: operations["update_merchant_api_v1_merchants__merchant_id__patch"];
         trace?: never;
     };
+    "/api/v1/metrics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Metrics */
+        get: operations["list_metrics_api_v1_metrics_get"];
+        put?: never;
+        /** Create Metric */
+        post: operations["create_metric_api_v1_metrics_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/metrics/bulk": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Bulk Create Metrics */
+        post: operations["bulk_create_metrics_api_v1_metrics_bulk_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/metrics/{metric_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Metric */
+        delete: operations["delete_metric_api_v1_metrics__metric_id__delete"];
+        options?: never;
+        head?: never;
+        /** Update Metric */
+        patch: operations["update_metric_api_v1_metrics__metric_id__patch"];
+        trace?: never;
+    };
     "/api/v1/sync/jobs/{job_id}": {
         parameters: {
             query?: never;
@@ -536,6 +589,10 @@ export interface components {
         Envelope_MerchantPublic_: {
             data: components["schemas"]["MerchantPublic"];
         };
+        /** Envelope[MetricPublic] */
+        Envelope_MetricPublic_: {
+            data: components["schemas"]["MetricPublic"];
+        };
         /** Envelope[SuccessResponse] */
         Envelope_SuccessResponse_: {
             data: components["schemas"]["SuccessResponse"];
@@ -547,6 +604,11 @@ export interface components {
         /** Envelope[UserPublic] */
         Envelope_UserPublic_: {
             data: components["schemas"]["UserPublic"];
+        };
+        /** Envelope[list[MetricPublic]] */
+        Envelope_list_MetricPublic__: {
+            /** Data */
+            data: components["schemas"]["MetricPublic"][];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -642,6 +704,77 @@ export interface components {
             name?: string | null;
             /** Aliases */
             aliases?: string[] | null;
+        };
+        /** MetricBulkCreateRequest */
+        MetricBulkCreateRequest: {
+            /** Entries */
+            entries: components["schemas"]["MetricCreateRequest"][];
+        };
+        /** MetricCreateRequest */
+        MetricCreateRequest: {
+            /** Type */
+            type: string;
+            /** Value */
+            value: number | string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Note */
+            note?: string | null;
+            /** Account Id */
+            account_id?: string | null;
+            /** Asset Id */
+            asset_id?: string | null;
+        };
+        /** MetricPublic */
+        MetricPublic: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /** Type */
+            type: string;
+            /** Value */
+            value: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Note */
+            note: string | null;
+            /** Account Id */
+            account_id: string | null;
+            /** Asset Id */
+            asset_id: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /**
+         * MetricUpdateRequest
+         * @description Corrects a past entry (API_SPEC.md §14) — account_id/asset_id aren't editable here;
+         *     delete and re-create if a metric was logged against the wrong account/asset.
+         */
+        MetricUpdateRequest: {
+            /** Type */
+            type?: string | null;
+            /** Value */
+            value?: number | string | null;
+            /** Date */
+            date?: string | null;
+            /** Note */
+            note?: string | null;
         };
         /** RegisterRequest */
         RegisterRequest: {
@@ -1575,6 +1708,175 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Envelope_MerchantPublic_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_metrics_api_v1_metrics_get: {
+        parameters: {
+            query?: {
+                type?: string | null;
+                account_id?: string | null;
+                asset_id?: string | null;
+                date_from?: string | null;
+                date_to?: string | null;
+                page?: number;
+                page_size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_metric_api_v1_metrics_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MetricCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_MetricPublic_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    bulk_create_metrics_api_v1_metrics_bulk_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MetricBulkCreateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_list_MetricPublic__"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_metric_api_v1_metrics__metric_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                metric_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_metric_api_v1_metrics__metric_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                metric_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MetricUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Envelope_MetricPublic_"];
                 };
             };
             /** @description Validation Error */
