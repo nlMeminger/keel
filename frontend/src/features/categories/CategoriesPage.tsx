@@ -1,3 +1,15 @@
+import {
+  Alert,
+  Badge,
+  Button,
+  Group,
+  NativeSelect,
+  Paper,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core'
 import { useState } from 'react'
 import { ApiError } from '../../lib/api-client'
 import {
@@ -21,19 +33,20 @@ function CreateCategoryForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <label>
-        New category
-        <input
+    <Paper withBorder p="lg" radius="md" component="form" onSubmit={handleSubmit}>
+      <Group align="flex-end">
+        <TextInput
+          label="New category"
           value={primaryCategory}
           onChange={(e) => setPrimaryCategory(e.target.value)}
           required
+          style={{ flex: 1 }}
         />
-      </label>
-      <button type="submit" disabled={createCategory.isPending}>
-        Add category
-      </button>
-    </form>
+        <Button type="submit" loading={createCategory.isPending}>
+          Add category
+        </Button>
+      </Group>
+    </Paper>
   )
 }
 
@@ -75,49 +88,65 @@ function CustomCategoryRow({
   const reassignOptions = allCategories.filter((c) => c.id !== category.id)
 
   return (
-    <li>
+    <Paper component="li" withBorder p="md" radius="md" style={{ listStyle: 'none' }}>
       {editing ? (
-        <>
-          <input value={name} onChange={(e) => setName(e.target.value)} />
-          <button type="button" onClick={handleSave} disabled={updateCategory.isPending}>
+        <Group>
+          <TextInput value={name} onChange={(e) => setName(e.target.value)} />
+          <Button size="sm" onClick={handleSave} loading={updateCategory.isPending}>
             Save
-          </button>
-          <button type="button" onClick={() => setEditing(false)}>
+          </Button>
+          <Button size="sm" variant="subtle" onClick={() => setEditing(false)}>
             Cancel
-          </button>
-        </>
+          </Button>
+        </Group>
       ) : (
-        <>
-          {category.primary_category}
-          <button type="button" onClick={() => setEditing(true)}>
-            Edit
-          </button>
-          <button type="button" onClick={() => handleDelete()} disabled={deleteCategory.isPending}>
-            Delete
-          </button>
-        </>
+        <Group justify="space-between">
+          <Text>{category.primary_category}</Text>
+          <Group gap="xs">
+            <Button size="sm" variant="subtle" onClick={() => setEditing(true)}>
+              Edit
+            </Button>
+            <Button
+              size="sm"
+              variant="subtle"
+              color="red"
+              onClick={() => handleDelete()}
+              loading={deleteCategory.isPending}
+            >
+              Delete
+            </Button>
+          </Group>
+        </Group>
       )}
       {conflict && (
-        <div role="alert">
-          <p>This category is still used by some transactions. Reassign them to:</p>
-          <select value={reassignTo} onChange={(e) => setReassignTo(e.target.value)}>
-            <option value="">Choose a category…</option>
-            {reassignOptions.map((option) => (
-              <option key={option.id} value={option.id}>
-                {option.primary_category}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={() => handleDelete(reassignTo)}
-            disabled={!reassignTo || deleteCategory.isPending}
-          >
-            Reassign and delete
-          </button>
-        </div>
+        <Alert role="alert" color="yellow" mt="sm" title="Category still in use">
+          <Stack gap="xs">
+            <Text size="sm">
+              This category is still used by some transactions. Reassign them to:
+            </Text>
+            <NativeSelect
+              value={reassignTo}
+              onChange={(e) => setReassignTo(e.target.value)}
+              data={[
+                { value: '', label: 'Choose a category…' },
+                ...reassignOptions.map((option) => ({
+                  value: option.id,
+                  label: option.primary_category,
+                })),
+              ]}
+            />
+            <Button
+              size="sm"
+              onClick={() => handleDelete(reassignTo)}
+              disabled={!reassignTo}
+              loading={deleteCategory.isPending}
+            >
+              Reassign and delete
+            </Button>
+          </Stack>
+        </Alert>
       )}
-    </li>
+    </Paper>
   )
 }
 
@@ -127,22 +156,28 @@ export function CategoriesPage() {
   const allCategories = [...(systemCategories ?? []), ...(customCategories ?? [])]
 
   return (
-    <main>
-      <h1>Categories</h1>
+    <Stack>
+      <Title order={1}>Categories</Title>
       <CreateCategoryForm />
 
-      <h2>System categories</h2>
-      <ul>
+      <Title order={2} size="h4">
+        System categories
+      </Title>
+      <Group gap="xs">
         {(systemCategories ?? []).map((category) => (
-          <li key={category.id}>{category.primary_category}</li>
+          <Badge key={category.id} variant="light" size="lg">
+            {category.primary_category}
+          </Badge>
         ))}
-      </ul>
+      </Group>
 
-      <h2>Your categories</h2>
+      <Title order={2} size="h4">
+        Your categories
+      </Title>
       {isLoading || !customCategories ? (
-        <p>Loading categories…</p>
+        <Text>Loading categories…</Text>
       ) : (
-        <ul>
+        <Stack gap="sm" component="ul" style={{ padding: 0 }}>
           {customCategories.map((category) => (
             <CustomCategoryRow
               key={category.id}
@@ -150,8 +185,8 @@ export function CategoriesPage() {
               allCategories={allCategories}
             />
           ))}
-        </ul>
+        </Stack>
       )}
-    </main>
+    </Stack>
   )
 }
