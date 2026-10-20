@@ -10,6 +10,7 @@ from app.budgets import models as budgets_models  # noqa: F401
 from app.categories import models as categories_models  # noqa: F401
 from app.config import settings
 from app.database import Base
+from app.goals import models as goals_models  # noqa: F401
 from app.jobs import models as jobs_models  # noqa: F401
 from app.merchants import models as merchants_models  # noqa: F401
 from app.metrics import models as metrics_models  # noqa: F401
