@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy import Select, select
@@ -8,6 +9,7 @@ from app.accounts.models import Account
 from app.accounts.schemas import validate_detail_for_type
 from app.auth.models import User
 from app.core.errors import AppError
+from app.metrics import service as metrics_service
 
 
 def create_account(
@@ -57,6 +59,8 @@ def update_account(
     detail: dict[str, object] | None,
 ) -> Account:
     account = get_account(db, user, account_id)
+    balance_changed = balance is not None and balance != account.balance
+
     if name is not None:
         account.name = name
     if account_type is not None:
@@ -73,6 +77,21 @@ def update_account(
 
     db.commit()
     db.refresh(account)
+
+    # Append-only value-history entry (4.9) — never a find-and-update, and only written
+    # when the submitted balance actually differs from what was already stored.
+    if balance_changed:
+        metrics_service.create_metric(
+            db,
+            user,
+            metric_type="account_balance",
+            value=account.balance,
+            metric_date=datetime.now(UTC).date(),
+            note=None,
+            account_id=account.id,
+            asset_id=None,
+        )
+
     return account
 
 

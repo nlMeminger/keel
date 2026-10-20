@@ -1,4 +1,5 @@
 import uuid
+from datetime import UTC, datetime
 from decimal import Decimal
 
 from sqlalchemy import Select, select
@@ -7,6 +8,7 @@ from sqlalchemy.orm import Session as DbSession
 from app.assets.models import Asset
 from app.auth.models import User
 from app.core.errors import AppError
+from app.metrics import service as metrics_service
 
 
 def create_asset(
@@ -39,6 +41,8 @@ def update_asset(
     current_value: Decimal | None,
 ) -> Asset:
     asset = get_asset(db, user, asset_id)
+    value_changed = current_value is not None and current_value != asset.current_value
+
     if name is not None:
         asset.name = name
     if asset_type is not None:
@@ -47,6 +51,20 @@ def update_asset(
         asset.current_value = current_value
     db.commit()
     db.refresh(asset)
+
+    # Append-only value-history entry (4.9) — mirrors Account's balance auto-write.
+    if value_changed:
+        metrics_service.create_metric(
+            db,
+            user,
+            metric_type="asset_value",
+            value=asset.current_value,
+            metric_date=datetime.now(UTC).date(),
+            note=None,
+            account_id=None,
+            asset_id=asset.id,
+        )
+
     return asset
 
 
