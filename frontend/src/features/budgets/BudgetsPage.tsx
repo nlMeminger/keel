@@ -1,3 +1,14 @@
+import {
+  Button,
+  Group,
+  NativeSelect,
+  Paper,
+  Progress,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core'
 import { useState } from 'react'
 import { useCategories } from '../categories/api'
 import { type Budget, useBudgets, useCreateBudget, useDeleteBudget } from './api'
@@ -22,42 +33,43 @@ function CreateBudgetForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Add budget</h2>
-      <label>
-        Category
-        <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-          <option value="">Overall (all spending)</option>
-          {(categories ?? []).map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.primary_category}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        Monthly limit
-        <input
+    <Paper withBorder p="lg" radius="md" component="form" onSubmit={handleSubmit}>
+      <Stack>
+        <Title order={2} size="h4">
+          Add budget
+        </Title>
+        <NativeSelect
+          label="Category"
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value)}
+          data={[
+            { value: '', label: 'Overall (all spending)' },
+            ...(categories ?? []).map((category) => ({
+              value: category.id,
+              label: category.primary_category,
+            })),
+          ]}
+        />
+        <TextInput
+          label="Monthly limit"
           type="number"
           step="0.01"
           value={amountLimit}
           onChange={(e) => setAmountLimit(e.target.value)}
           required
         />
-      </label>
-      <label>
-        Start date
-        <input
+        <TextInput
+          label="Start date"
           type="date"
           value={startDate}
           onChange={(e) => setStartDate(e.target.value)}
           required
         />
-      </label>
-      <button type="submit" disabled={createBudget.isPending}>
-        Add budget
-      </button>
-    </form>
+        <Button type="submit" loading={createBudget.isPending}>
+          Add budget
+        </Button>
+      </Stack>
+    </Paper>
   )
 }
 
@@ -68,18 +80,26 @@ function BudgetRow({ budget, categoryName }: { budget: Budget; categoryName: str
   const percent = limit > 0 ? Math.min(100, Math.round((spent / limit) * 100)) : 0
 
   return (
-    <li>
-      <strong>{categoryName}</strong>: {budget.spend_so_far} of {budget.amount_limit} spent (
-      {percent}%)
-      <progress value={spent} max={limit} />
-      <button
-        type="button"
-        onClick={() => deleteBudget.mutate(budget.id)}
-        disabled={deleteBudget.isPending}
-      >
-        Delete
-      </button>
-    </li>
+    <Paper component="li" withBorder p="md" radius="md" style={{ listStyle: 'none' }}>
+      <Stack gap="xs">
+        <Group justify="space-between">
+          <Text fw={500}>{categoryName}</Text>
+          <Button
+            size="sm"
+            variant="subtle"
+            color="red"
+            onClick={() => deleteBudget.mutate(budget.id)}
+            loading={deleteBudget.isPending}
+          >
+            Delete
+          </Button>
+        </Group>
+        <Text size="sm" c="dimmed">
+          {budget.spend_so_far} of {budget.amount_limit} spent ({percent}%)
+        </Text>
+        <Progress value={percent} color={percent >= 100 ? 'red' : 'teal'} />
+      </Stack>
+    </Paper>
   )
 }
 
@@ -89,13 +109,13 @@ export function BudgetsPage() {
   const categoryNames = new Map((categories ?? []).map((c) => [c.id, c.primary_category]))
 
   return (
-    <main>
-      <h1>Budgets</h1>
+    <Stack>
+      <Title order={1}>Budgets</Title>
       <CreateBudgetForm />
       {isLoading || !budgets ? (
-        <p>Loading budgets…</p>
+        <Text>Loading budgets…</Text>
       ) : (
-        <ul>
+        <Stack gap="sm" component="ul" style={{ padding: 0 }}>
           {budgets.map((budget) => (
             <BudgetRow
               key={budget.id}
@@ -105,8 +125,8 @@ export function BudgetsPage() {
               }
             />
           ))}
-        </ul>
+        </Stack>
       )}
-    </main>
+    </Stack>
   )
 }
