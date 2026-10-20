@@ -10,7 +10,7 @@ Sequencing and dependencies for building what [SPEC.md](SPEC.md) and [API_SPEC.m
 - Each phase also has **exit criteria** — the integration-level check that the phase as a whole is done, beyond its individual items.
 
 ## Open decisions (blockers not tied to one phase)
-- **D1 — Component library** (shadcn/ui vs Mantine vs other, [SPEC.md §7](SPEC.md#7-open-questions--next-steps)). Blocks final styling of every frontend item below; doesn't block building them functionally first.
+- **D1 — Component library.** Resolved: Mantine ([SPEC.md §3](SPEC.md#3-architecture)). No longer blocks styling of any frontend item below.
 - **D2 — Deployment target** (self-host vs cloud, [SPEC.md §7](SPEC.md#7-open-questions--next-steps)). Doesn't block local dev (Docker Compose covers that); needed before Phase 9.
 - **D3 — Plaid developer account + sandbox API keys.** Nothing in Phase 7 can be built or tested without this. Unlike D1/D2, this has external lead time (signup/approval) — worth starting now even though Phase 7 is late, so it's ready when you get there.
 
@@ -24,7 +24,6 @@ Goal: both apps boot locally against real Postgres + Redis, with CI running a (c
   - Success: `uvicorn` boots the app locally with no errors; `GET /health` returns `200`; `alembic upgrade head` runs cleanly against a fresh database.
 - **1.2 — Frontend skeleton.** Vite + React + TS, ESLint/Prettier, TanStack Query provider, router stub.
   - Depends on: —
-  - Blocked by: D1, for anything beyond a bare shell.
   - Success: `npm run dev` serves a page with zero console errors; `npm run lint` and `npm run build` both pass untouched.
 - **1.3 — Docker Compose.** Postgres, Redis, backend, frontend, all boot with one command.
   - Depends on: 1.1, 1.2
@@ -61,7 +60,6 @@ Goal: register → log in → authenticated request → refresh → logout works
   - Success: a test firing 6 login attempts for the same IP+username inside 15 minutes gets a 429 on the 6th; a legitimate attempt after the window resets succeeds.
 - **2.7 — Frontend auth screens.** Login, register, session management, token storage + refresh interceptor, protected-route wrapper.
   - Depends on: 2.3, 1.2
-  - Blocked by: D1, for final styling only.
   - Success: a user can register/log in through the actual UI, stay logged in across a token-expiry refresh with no visible interruption, and logging out clears client state and redirects.
 
 **Exit:** the full auth loop works end-to-end, with a passing test proving a second user's token can't touch the first user's `/auth/me`.
@@ -133,7 +131,6 @@ Goal: every core feature works fully on manually-entered data. **This is the mil
   - Success: a manual investment account accepts a hand-entered holding (symbol, quantity, cost basis) via the API; the same routes return 403 against a Plaid-linked account's holdings (those are sync-populated, proven for real once 7.3 lands).
 - **4.15 — Frontend screens** for Accounts (incl. Holdings), Transactions (incl. transfer suggestion review), Categories, Merchants, Budgets, Goals, Assets.
   - Depends on: matching backend item + 2.7
-  - Blocked by: D1, for final styling.
   - Success: for every resource, a full CRUD loop is completable through the UI alone — create, see it listed, edit, delete, list updates without a manual refresh; a suggested transfer pair is visibly reviewable and confirming/rejecting it updates both transactions without a page reload.
 
 **Exit:** a brand-new user with zero Plaid connections can create accounts (with manual holdings on an investment account), log and categorize transactions, confirm a detected transfer pair, set budgets and goals, track assets, and log a manual metric — entirely through the UI.

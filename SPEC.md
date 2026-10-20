@@ -1,4 +1,4 @@
-# Money App v2 — Planning Spec
+# Keel — Planning Spec
 
 ## 1. Goals
 - A UI that actually works: consistent interactions, mobile-friendly, real-time feedback on every sync/background operation — never a silent failure.
@@ -17,7 +17,7 @@
 
 **Backend:** FastAPI (Python), SQLAlchemy 2.0, PostgreSQL, Celery + Redis for background jobs, Plaid Python SDK for bank connections. Typed JSON API (Pydantic schemas, auto-generated OpenAPI spec) — useful for a typed frontend and later a native app.
 
-**Frontend:** React + TypeScript SPA (Vite), mobile-responsive layout, a component library for consistent UI (e.g. shadcn/ui or Mantine — decide during setup). Server state (fetching, caching, loading/error states) runs through TanStack Query — resolved now rather than left open, since it's the direct mechanism behind goal #1's real-time sync feedback; the component library pick is independent and stays open. Talks to the API over JSON; no server-rendered pages.
+**Frontend:** React + TypeScript SPA (Vite), mobile-responsive layout, Mantine as the component library for consistent UI (components, forms, theming/dark-mode all in one ecosystem — chosen over shadcn/ui to avoid separately assembling Tailwind, a forms lib, and a charts lib). Server state (fetching, caching, loading/error states) runs through TanStack Query, the direct mechanism behind goal #1's real-time sync feedback. Talks to the API over JSON; no server-rendered pages.
 
 **Auth & multi-user:** Real per-user accounts. Short-lived JWT access token (sent via `Authorization` header, not a cookie — avoids CSRF exposure for the API itself) + rotating refresh token in an httpOnly cookie (CSRF-protected on the refresh endpoint only), backed by a `Session` table so sessions can actually be revoked (see §5, [API_SPEC.md §1](API_SPEC.md#1-auth)). Every record (`Account`, `Transaction`, `Plaid_item`, etc.) is scoped to `owner_id`; every query derives the acting user from the verified token, never from client-supplied IDs.
 
@@ -95,7 +95,6 @@ Core entities: `User`, `Plaid_item`, `Bank`, `Account`, `Holding`, `Transaction`
 - Every write route ships with an ownership/authorization test (wrong user's token → 403/404, never a silent success) as part of "done." The auth flow (login → refresh → rotation → theft-detection revocation) gets its own integration test suite, since that's the highest-value path to get right.
 
 ## 7. Open questions / next steps
-- Component library choice for the frontend (shadcn/ui vs Mantine vs other) — decide during setup.
 - Deployment target (self-host vs cloud) — left open, architecture stays portable either way.
 
 **Resolved:**
