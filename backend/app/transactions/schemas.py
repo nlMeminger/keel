@@ -6,6 +6,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 TransferStatus = Literal["none", "suggested", "confirmed", "rejected"]
+ConfirmOrReject = Literal["confirmed", "rejected"]
 SortOption = Literal["date_asc", "date_desc", "amount_asc", "amount_desc"]
 
 
@@ -28,6 +29,9 @@ class TransactionUpdateRequest(BaseModel):
     category_id: uuid.UUID | None = None
     merchant_id: uuid.UUID | None = None
     notes: str | None = None
+    # Only ever "confirmed"/"rejected" — the client resolves a suggestion, it never sets
+    # "suggested"/"none" directly (those are detection's own job).
+    transfer_status: ConfirmOrReject | None = None
 
 
 class TransactionPublic(BaseModel):

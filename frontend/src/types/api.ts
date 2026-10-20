@@ -1092,6 +1092,8 @@ export interface components {
             merchant_id?: string | null;
             /** Notes */
             notes?: string | null;
+            /** Transfer Status */
+            transfer_status?: ("confirmed" | "rejected") | null;
         };
         /** UserPublic */
         UserPublic: {

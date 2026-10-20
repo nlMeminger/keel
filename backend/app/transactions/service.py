@@ -12,6 +12,7 @@ from app.categories.models import Category
 from app.core.errors import AppError
 from app.merchants.models import Merchant
 from app.transactions.models import Transaction
+from app.transactions.transfer import confirm_transfer, detect_transfer_candidates, reject_transfer
 
 
 def _get_owned_account(db: DbSession, user: User, account_id: uuid.UUID) -> Account:
@@ -66,6 +67,9 @@ def create_transaction(
     )
     db.add(txn)
     db.commit()
+    db.refresh(txn)
+
+    detect_transfer_candidates(db, txn)
     db.refresh(txn)
     return txn
 
@@ -153,11 +157,38 @@ def update_transaction(
         assert notes is None or isinstance(notes, str)
         txn.notes = notes
     db.commit()
+
+    # transfer_status resolves a pending suggestion (confirm/reject) — handled last since it
+    # touches the paired transaction too, after this side's other fields are already saved.
+    if fields.get("transfer_status") is not None:
+        new_status = fields["transfer_status"]
+        assert new_status in ("confirmed", "rejected")
+        if txn.transfer_status != "suggested" or txn.paired_transaction_id is None:
+            raise AppError(
+                409,
+                "no_transfer_suggestion",
+                "This transaction has no pending transfer suggestion.",
+            )
+        paired = db.get(Transaction, txn.paired_transaction_id)
+        assert paired is not None
+        if new_status == "confirmed":
+            confirm_transfer(db, txn, paired)
+        else:
+            reject_transfer(db, txn, paired)
+
     db.refresh(txn)
     return txn
 
 
 def delete_transaction(db: DbSession, user: User, transaction_id: uuid.UUID) -> None:
     txn = get_transaction(db, user, transaction_id)
+    # Deleting one side of a suggested/confirmed pair must reset the other side's status —
+    # the self-referential FK's ON DELETE SET NULL only clears paired_transaction_id, it
+    # never touches transfer_status on the other row.
+    if txn.transfer_status in ("suggested", "confirmed") and txn.paired_transaction_id is not None:
+        paired = db.get(Transaction, txn.paired_transaction_id)
+        if paired is not None:
+            paired.transfer_status = "none"
+            paired.paired_transaction_id = None
     db.delete(txn)
     db.commit()
