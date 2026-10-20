@@ -1,9 +1,29 @@
-import { Route, Routes } from 'react-router-dom'
+import { Link, Route, Routes, useNavigate } from 'react-router-dom'
+import { ProtectedRoute } from './components/ProtectedRoute'
+import { useLogout, useMe } from './features/auth/api'
+import { LoginPage } from './features/auth/LoginPage'
+import { RegisterPage } from './features/auth/RegisterPage'
+import { SessionsPage } from './features/auth/SessionsPage'
 
 function Home() {
+  const { data: user } = useMe()
+  const logout = useLogout()
+  const navigate = useNavigate()
+
   return (
     <main>
       <h1>Money App</h1>
+      {user && <p>Welcome, {user.name}.</p>}
+      <nav>
+        <Link to="/settings/sessions">Sessions</Link>
+      </nav>
+      <button
+        type="button"
+        onClick={() => logout.mutate(undefined, { onSuccess: () => navigate('/login') })}
+        disabled={logout.isPending}
+      >
+        Log out
+      </button>
     </main>
   )
 }
@@ -11,7 +31,12 @@ function Home() {
 function App() {
   return (
     <Routes>
-      <Route path="/" element={<Home />} />
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route element={<ProtectedRoute />}>
+        <Route path="/" element={<Home />} />
+        <Route path="/settings/sessions" element={<SessionsPage />} />
+      </Route>
     </Routes>
   )
 }
