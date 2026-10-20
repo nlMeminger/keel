@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.categories.seed import seed_categories
 from app.celery_app import celery_app
 from app.config import settings
 from app.core import rate_limit
@@ -38,9 +39,18 @@ TestSessionLocal = sessionmaker(bind=test_engine, autocommit=False, autoflush=Fa
 
 @pytest.fixture(autouse=True)
 def _reset_schema() -> Generator[None, None, None]:
-    """Recreate every table fresh for each test — isolation over speed, given the suite's size."""
+    """Recreate every table fresh for each test — isolation over speed, given the suite's size.
+
+    Schema comes from create_all(), not `alembic upgrade head`, so seed data (system
+    categories) can't live only inside the migration body — it's re-applied here too.
+    """
     Base.metadata.drop_all(bind=test_engine)
     Base.metadata.create_all(bind=test_engine)
+    session = TestSessionLocal()
+    try:
+        seed_categories(session)
+    finally:
+        session.close()
     yield
 
 
