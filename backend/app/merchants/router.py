@@ -44,9 +44,7 @@ def update_merchant(
     db: DbSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict[str, MerchantPublic]:
-    merchant = service.update_merchant(
-        db, user, merchant_id, name=body.name, aliases=body.aliases
-    )
+    merchant = service.update_merchant(db, user, merchant_id, name=body.name, aliases=body.aliases)
     return {"data": MerchantPublic.model_validate(merchant)}
 
 
