@@ -1,6 +1,7 @@
 import { Link, Route, Routes, useNavigate } from 'react-router-dom'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AccountsPage } from './features/accounts/AccountsPage'
+import { AssetsPage } from './features/assets/AssetsPage'
 import { useLogout, useMe } from './features/auth/api'
 import { BudgetsPage } from './features/budgets/BudgetsPage'
 import { CategoriesPage } from './features/categories/CategoriesPage'
@@ -22,6 +23,7 @@ function Home() {
       {user && <p>Welcome, {user.name}.</p>}
       <nav>
         <Link to="/accounts">Accounts</Link>
+        <Link to="/assets">Assets</Link>
         <Link to="/budgets">Budgets</Link>
         <Link to="/categories">Categories</Link>
         <Link to="/goals">Goals</Link>
@@ -48,6 +50,7 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<Home />} />
         <Route path="/accounts" element={<AccountsPage />} />
+        <Route path="/assets" element={<AssetsPage />} />
         <Route path="/budgets" element={<BudgetsPage />} />
         <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/goals" element={<GoalsPage />} />
