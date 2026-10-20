@@ -2,6 +2,7 @@ import { Link, Route, Routes, useNavigate } from 'react-router-dom'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AccountsPage } from './features/accounts/AccountsPage'
 import { useLogout, useMe } from './features/auth/api'
+import { CategoriesPage } from './features/categories/CategoriesPage'
 import { LoginPage } from './features/auth/LoginPage'
 import { RegisterPage } from './features/auth/RegisterPage'
 import { SessionsPage } from './features/auth/SessionsPage'
@@ -17,6 +18,7 @@ function Home() {
       {user && <p>Welcome, {user.name}.</p>}
       <nav>
         <Link to="/accounts">Accounts</Link>
+        <Link to="/categories">Categories</Link>
         <Link to="/settings/sessions">Sessions</Link>
       </nav>
       <button
@@ -38,6 +40,7 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="/" element={<Home />} />
         <Route path="/accounts" element={<AccountsPage />} />
+        <Route path="/categories" element={<CategoriesPage />} />
         <Route path="/settings/sessions" element={<SessionsPage />} />
       </Route>
     </Routes>
