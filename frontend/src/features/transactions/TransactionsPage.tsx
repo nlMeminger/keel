@@ -1,3 +1,15 @@
+import {
+  Badge,
+  Button,
+  Group,
+  NativeSelect,
+  Paper,
+  Stack,
+  Table,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core'
 import { useState } from 'react'
 import { useAccounts } from '../accounts/api'
 import { useCategories } from '../categories/api'
@@ -42,52 +54,59 @@ function CreateTransactionForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Add transaction</h2>
-      <label>
-        Account
-        <select value={accountId} onChange={(e) => setAccountId(e.target.value)} required>
-          <option value="">Select account…</option>
-          {(accounts ?? []).map((account) => (
-            <option key={account.id} value={account.id}>
-              {account.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        Category
-        <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-          <option value="">Uncategorized</option>
-          {(categories ?? []).map((category) => (
-            <option key={category.id} value={category.id}>
-              {category.primary_category}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        Amount (positive = inflow, negative = outflow)
-        <input
+    <Paper withBorder p="lg" radius="md" component="form" onSubmit={handleSubmit}>
+      <Stack>
+        <Title order={2} size="h4">
+          Add transaction
+        </Title>
+        <NativeSelect
+          label="Account"
+          value={accountId}
+          onChange={(e) => setAccountId(e.target.value)}
+          required
+          data={[
+            { value: '', label: 'Select account…' },
+            ...(accounts ?? []).map((account) => ({ value: account.id, label: account.name })),
+          ]}
+        />
+        <NativeSelect
+          label="Category"
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value)}
+          data={[
+            { value: '', label: 'Uncategorized' },
+            ...(categories ?? []).map((category) => ({
+              value: category.id,
+              label: category.primary_category,
+            })),
+          ]}
+        />
+        <TextInput
+          label="Amount (positive = inflow, negative = outflow)"
           type="number"
           step="0.01"
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
           required
         />
-      </label>
-      <label>
-        Description
-        <input value={description} onChange={(e) => setDescription(e.target.value)} required />
-      </label>
-      <label>
-        Date
-        <input type="date" value={date} onChange={(e) => setDate(e.target.value)} required />
-      </label>
-      <button type="submit" disabled={createTransaction.isPending}>
-        Add transaction
-      </button>
-    </form>
+        <TextInput
+          label="Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          required
+        />
+        <TextInput
+          label="Date"
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          required
+        />
+        <Button type="submit" loading={createTransaction.isPending}>
+          Add transaction
+        </Button>
+      </Stack>
+    </Paper>
   )
 }
 
@@ -99,34 +118,41 @@ function SuggestedTransfers() {
   if (suggestions.length === 0) return null
 
   return (
-    <section>
-      <h2>Suggested transfers</h2>
-      <ul>
+    <Paper withBorder p="lg" radius="md">
+      <Stack>
+        <Title order={2} size="h4">
+          Suggested transfers
+        </Title>
         {suggestions.map((txn) => (
-          <li key={txn.id}>
-            {txn.date} — {txn.description} ({txn.amount})
-            <button
-              type="button"
-              onClick={() =>
-                updateTransaction.mutate({ id: txn.id, input: { transfer_status: 'confirmed' } })
-              }
-              disabled={updateTransaction.isPending}
-            >
-              Confirm transfer
-            </button>
-            <button
-              type="button"
-              onClick={() =>
-                updateTransaction.mutate({ id: txn.id, input: { transfer_status: 'rejected' } })
-              }
-              disabled={updateTransaction.isPending}
-            >
-              Not a transfer
-            </button>
-          </li>
+          <Group key={txn.id} justify="space-between">
+            <Text size="sm">
+              {txn.date} — {txn.description} ({txn.amount})
+            </Text>
+            <Group gap="xs">
+              <Button
+                size="sm"
+                onClick={() =>
+                  updateTransaction.mutate({ id: txn.id, input: { transfer_status: 'confirmed' } })
+                }
+                loading={updateTransaction.isPending}
+              >
+                Confirm transfer
+              </Button>
+              <Button
+                size="sm"
+                variant="subtle"
+                onClick={() =>
+                  updateTransaction.mutate({ id: txn.id, input: { transfer_status: 'rejected' } })
+                }
+                loading={updateTransaction.isPending}
+              >
+                Not a transfer
+              </Button>
+            </Group>
+          </Group>
         ))}
-      </ul>
-    </section>
+      </Stack>
+    </Paper>
   )
 }
 
@@ -150,30 +176,56 @@ function TransactionRow({
   }
 
   return (
-    <li>
-      {transaction.date} — {transaction.description} — {transaction.amount} ({categoryName})
-      {transaction.pending && ' [pending]'}
-      {transaction.is_transfer && ' [transfer]'}
-      {editingNotes ? (
-        <>
-          <input value={notes} onChange={(e) => setNotes(e.target.value)} />
-          <button type="button" onClick={handleSaveNotes} disabled={updateTransaction.isPending}>
-            Save notes
-          </button>
-        </>
-      ) : (
-        <button type="button" onClick={() => setEditingNotes(true)}>
-          {transaction.notes ? `Notes: ${transaction.notes}` : 'Add note'}
-        </button>
-      )}
-      <button
-        type="button"
-        onClick={() => deleteTransaction.mutate(transaction.id)}
-        disabled={deleteTransaction.isPending}
-      >
-        Delete
-      </button>
-    </li>
+    <Table.Tr>
+      <Table.Td>{transaction.date}</Table.Td>
+      <Table.Td>
+        {transaction.description}{' '}
+        <Text component="span" c="dimmed" size="sm">
+          ({categoryName})
+        </Text>
+      </Table.Td>
+      <Table.Td>{transaction.amount}</Table.Td>
+      <Table.Td>
+        <Group gap={4}>
+          {transaction.pending && <Badge size="sm">pending</Badge>}
+          {transaction.is_transfer && (
+            <Badge size="sm" color="grape">
+              transfer
+            </Badge>
+          )}
+        </Group>
+      </Table.Td>
+      <Table.Td>
+        {editingNotes ? (
+          <Group gap="xs" wrap="nowrap">
+            <TextInput
+              size="xs"
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              aria-label="Notes"
+            />
+            <Button size="xs" onClick={handleSaveNotes} loading={updateTransaction.isPending}>
+              Save notes
+            </Button>
+          </Group>
+        ) : (
+          <Button size="xs" variant="subtle" onClick={() => setEditingNotes(true)}>
+            {transaction.notes ? `Notes: ${transaction.notes}` : 'Add note'}
+          </Button>
+        )}
+      </Table.Td>
+      <Table.Td>
+        <Button
+          size="xs"
+          variant="subtle"
+          color="red"
+          onClick={() => deleteTransaction.mutate(transaction.id)}
+          loading={deleteTransaction.isPending}
+        >
+          Delete
+        </Button>
+      </Table.Td>
+    </Table.Tr>
   )
 }
 
@@ -190,67 +242,92 @@ export function TransactionsPage() {
   }
 
   return (
-    <main>
-      <h1>Transactions</h1>
+    <Stack>
+      <Title order={1}>Transactions</Title>
       <CreateTransactionForm />
       <SuggestedTransfers />
 
-      <h2>Filters</h2>
-      <label>
-        Filter by account
-        <select
-          value={filters.account_id ?? ''}
-          onChange={(e) => updateFilter({ account_id: e.target.value || undefined })}
-        >
-          <option value="">All accounts</option>
-          {(accounts ?? []).map((account) => (
-            <option key={account.id} value={account.id}>
-              {account.name}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        Description contains
-        <input
-          value={filters.description ?? ''}
-          onChange={(e) => updateFilter({ description: e.target.value || undefined })}
-        />
-      </label>
+      <Paper withBorder p="lg" radius="md">
+        <Stack>
+          <Title order={2} size="h4">
+            Filters
+          </Title>
+          <Group grow>
+            <NativeSelect
+              label="Filter by account"
+              value={filters.account_id ?? ''}
+              onChange={(e) => updateFilter({ account_id: e.target.value || undefined })}
+              data={[
+                { value: '', label: 'All accounts' },
+                ...(accounts ?? []).map((account) => ({ value: account.id, label: account.name })),
+              ]}
+            />
+            <TextInput
+              label="Description contains"
+              value={filters.description ?? ''}
+              onChange={(e) => updateFilter({ description: e.target.value || undefined })}
+            />
+          </Group>
+        </Stack>
+      </Paper>
 
-      <h2>All transactions</h2>
+      <Title order={2} size="h4">
+        All transactions
+      </Title>
       {isLoading || !data ? (
-        <p>Loading transactions…</p>
+        <Text>Loading transactions…</Text>
       ) : (
         <>
-          <ul>
-            {data.data.map((txn) => (
-              <TransactionRow
-                key={txn.id}
-                transaction={txn}
-                categoryName={txn.category_id ? (categoryNames.get(txn.category_id) ?? '') : 'none'}
-              />
-            ))}
-          </ul>
-          <p>
-            Page {data.pagination.page} of {data.pagination.total_pages}
-          </p>
-          <button
-            type="button"
-            disabled={data.pagination.page <= 1}
-            onClick={() => setFilters((prev) => ({ ...prev, page: (prev.page ?? 1) - 1 }))}
-          >
-            Previous
-          </button>
-          <button
-            type="button"
-            disabled={data.pagination.page >= data.pagination.total_pages}
-            onClick={() => setFilters((prev) => ({ ...prev, page: (prev.page ?? 1) + 1 }))}
-          >
-            Next
-          </button>
+          <Table.ScrollContainer minWidth={700}>
+            <Table verticalSpacing="sm">
+              <Table.Thead>
+                <Table.Tr>
+                  <Table.Th>Date</Table.Th>
+                  <Table.Th>Description</Table.Th>
+                  <Table.Th>Amount</Table.Th>
+                  <Table.Th>Status</Table.Th>
+                  <Table.Th>Notes</Table.Th>
+                  <Table.Th />
+                </Table.Tr>
+              </Table.Thead>
+              <Table.Tbody>
+                {data.data.map((txn) => (
+                  <TransactionRow
+                    key={txn.id}
+                    transaction={txn}
+                    categoryName={
+                      txn.category_id ? (categoryNames.get(txn.category_id) ?? '') : 'none'
+                    }
+                  />
+                ))}
+              </Table.Tbody>
+            </Table>
+          </Table.ScrollContainer>
+          <Group justify="space-between">
+            <Text size="sm" c="dimmed">
+              Page {data.pagination.page} of {data.pagination.total_pages}
+            </Text>
+            <Group gap="xs">
+              <Button
+                size="sm"
+                variant="default"
+                disabled={data.pagination.page <= 1}
+                onClick={() => setFilters((prev) => ({ ...prev, page: (prev.page ?? 1) - 1 }))}
+              >
+                Previous
+              </Button>
+              <Button
+                size="sm"
+                variant="default"
+                disabled={data.pagination.page >= data.pagination.total_pages}
+                onClick={() => setFilters((prev) => ({ ...prev, page: (prev.page ?? 1) + 1 }))}
+              >
+                Next
+              </Button>
+            </Group>
+          </Group>
         </>
       )}
-    </main>
+    </Stack>
   )
 }

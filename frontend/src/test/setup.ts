@@ -14,6 +14,13 @@ window.matchMedia ??= (query: string) => ({
   dispatchEvent: () => false,
 })
 
+// jsdom has no ResizeObserver; Mantine's ScrollArea (used by Table.ScrollContainer) needs one.
+window.ResizeObserver ??= class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+}
+
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }))
 afterEach(() => server.resetHandlers())
 afterAll(() => server.close())
