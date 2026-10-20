@@ -4,6 +4,7 @@ from sqlalchemy import Select, func, or_, select, update
 from sqlalchemy.orm import Session as DbSession
 
 from app.auth.models import User
+from app.budgets.models import Budget
 from app.categories.models import Category
 from app.core.errors import AppError
 from app.transactions.models import Transaction
@@ -91,9 +92,9 @@ def delete_category(
 ) -> None:
     category = _get_category_for_edit(db, user, category_id)
 
-    # Reference check covers Transaction only for now; extend for Budget once 4.10 lands
-    # and for CategoryRule once Phase 5.1 adds that table (API_SPEC.md §6).
-    referencing_count = (
+    # Reference check covers Transaction and Budget; extend for CategoryRule once Phase
+    # 5.1 adds that table (API_SPEC.md §6).
+    transaction_count = (
         db.scalar(
             select(func.count())
             .select_from(Transaction)
@@ -101,9 +102,15 @@ def delete_category(
         )
         or 0
     )
-    if referencing_count > 0:
+    budget_count = (
+        db.scalar(select(func.count()).select_from(Budget).where(Budget.category_id == category_id))
+        or 0
+    )
+    if transaction_count + budget_count > 0:
         if reassign_to is None:
-            raise AppError(409, "category_in_use", "Category is still referenced by transactions.")
+            raise AppError(
+                409, "category_in_use", "Category is still referenced by transactions or budgets."
+            )
         target = _visible_category_or_none(db, user, reassign_to)
         if target is None:
             raise AppError(404, "not_found", "reassign_to category not found.")
@@ -111,6 +118,9 @@ def delete_category(
             update(Transaction)
             .where(Transaction.category_id == category_id)
             .values(category_id=reassign_to)
+        )
+        db.execute(
+            update(Budget).where(Budget.category_id == category_id).values(category_id=reassign_to)
         )
 
     db.delete(category)

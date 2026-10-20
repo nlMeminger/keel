@@ -51,7 +51,7 @@ This `Session` table is also what the admin `revoke-sessions` endpoint (§18) an
 ## 4. Accounts
 | Method | Path | Description |
 |---|---|---|
-| GET | `/accounts` | List accounts (filter: `type`, `bank_id`, `active`) |
+| GET | `/accounts` | List accounts (filter: `type`, `bank_id`, `active`). `bank_id` isn't implemented as of Phase 4 — that column doesn't exist until Phase 7.1/7.3 adds it alongside real Plaid linking |
 | GET | `/accounts/{account_id}` | Account detail |
 | POST | `/accounts` | Create a manual (non-Plaid) account |
 | PATCH | `/accounts/{account_id}` | Update account (name, type-specific fields) |
@@ -70,13 +70,15 @@ Type-specific detail (loan terms, mortgage schedule, student loan servicer, inve
 ## 5. Transactions
 | Method | Path | Description |
 |---|---|---|
-| GET | `/transactions` | List/filter/search (query params: `account_id`, `category_id`, `merchant`, `description`, `amount_min/max`, `date_from/to`, `pending`, `transfer_status` (`none`\|`suggested`\|`confirmed`\|`rejected`), `sort`) |
+| GET | `/transactions` | List/filter/search (query params: `account_id`, `category_id`, `merchant` (free-text substring match against the linked merchant's name — not a `merchant_id` exact match), `description`, `amount_min/max`, `date_from/to`, `pending`, `transfer_status` (`none`\|`suggested`\|`confirmed`\|`rejected`), `sort`) |
 | GET | `/transactions/{transaction_id}` | Transaction detail |
 | POST | `/transactions` | Manually add a transaction to an account |
 | POST | `/transactions/bulk/preview` | Parse an import file, return detected rows + likely duplicates/conflicts. Commits nothing |
 | POST | `/transactions/bulk` | Commit a bulk import (e.g. CSV) — same payload shape as the preview response, no server-side preview state to track or expire. Returns `202` + job id (see §16) instead of blocking — import size isn't bounded |
-| PATCH | `/transactions/{transaction_id}` | Update category, notes, or split; also where a `suggested` transfer pairing is resolved — `{ "transfer_status": "confirmed" }` or `{ "transfer_status": "rejected" }` |
+| PATCH | `/transactions/{transaction_id}` | Update category, notes, or merchant; also where a `suggested` transfer pairing is resolved — `{ "transfer_status": "confirmed" }` or `{ "transfer_status": "rejected" }` |
 | DELETE | `/transactions/{transaction_id}` | Delete a manually-added transaction |
+
+**Not yet implemented as of Phase 4**: `/transactions/bulk/preview` and `/transactions/bulk` — deferred because the import file payload shape (column mapping, header detection) was never pinned down, and Phase 4's roadmap success criteria for Transactions didn't require them. "Split" transactions (mentioned in earlier drafts of the PATCH row) are also not implemented — no `Split`/line-item entity exists anywhere in this doc, so it's being treated as dropped rather than deferred; revisit explicitly if splitting is still wanted. Revisit both before Phase 5's `CategoryRule.apply` or Phase 7's Plaid sync assume bulk-import plumbing already exists.
 
 **Transfer-pair detection**: runs automatically (any account creation/sync, manual or Plaid) looking for a same-owner, different-account, opposite-sign amount within ±1-2 business days. A match sets `paired_transaction_id` on both sides and `transfer_status=suggested` — it does **not** yet exclude them from reports or budgets. Only once the user confirms via the `PATCH` above does `is_transfer` flip to `true` on both sides, both get assigned the seeded system "Transfer" category, and they drop out of `/reports/cash-flow`, `/reports/spending-by-category`, and budget spend-so-far. Rejecting a suggested pair clears `paired_transaction_id` on both sides and sets `transfer_status=rejected` so the same two transactions aren't re-suggested. Execution: inline on `POST /transactions` (a single bounded, indexed query against the user's other accounts); for `POST /transactions/bulk` and Plaid sync it runs as a step inside that same job rather than a separate job type — see [§16](#16-sync--background-jobs).
 
@@ -86,7 +88,7 @@ Type-specific detail (loan terms, mortgage schedule, student loan servicer, inve
 | GET | `/categories` | List categories visible to the user: system (seeded) + their own custom ones. Query param `scope=system\|custom\|all` (default `all`) |
 | POST | `/categories` | Create a custom category (`primary_category`, optional `detailed_category`, optional `icon`/`color`) |
 | PATCH | `/categories/{category_id}` | Update a custom category. 403 if the target is a system category |
-| DELETE | `/categories/{category_id}` | Delete a custom category. 409 if transactions/rules/budgets still reference it unless `reassign_to=<category_id>` is supplied |
+| DELETE | `/categories/{category_id}` | Delete a custom category. 409 if transactions/rules/budgets still reference it unless `reassign_to=<category_id>` is supplied. As of Phase 4 the reference check covers `Transaction` and `Budget` — extend it for `CategoryRule` once Phase 5.1 adds that table |
 
 Category seeding happens via a migration/CLI command, not a public endpoint. `owner_id` is nullable on `Category` — `null` = system/seeded (read-only via the API), set = user's custom category. Rules, budgets, and transactions reference categories by id either way, so nothing downstream needs to know which kind it is except the edit/delete permission check above. One seeded system category, "Transfer," is never created or assigned directly through this API — it's only ever applied automatically when a transfer pairing is confirmed (see §5).
 
@@ -111,7 +113,7 @@ Category seeding happens via a migration/CLI command, not a public endpoint. `ow
 ## 9. Budgets
 | Method | Path | Description |
 |---|---|---|
-| GET | `/budgets` | List budgets with current period spend-vs-limit, computed live from transactions (never stored) and never counting a transaction with `is_transfer=true` |
+| GET | `/budgets` | List budgets with current period spend-vs-limit, computed live from transactions (never stored) and never counting a transaction with `is_transfer=true`. "Current period" = the calendar month containing today, clipped so it never starts before the budget's own `start_date` |
 | POST | `/budgets` | Create a budget: `{ category_id?, amount_limit, start_date }` — `category_id` omitted means an overall budget across all non-transfer spending. `period` is `monthly` only for v1, no custom/rolling windows, no rollover of unspent amounts between periods |
 | PATCH | `/budgets/{budget_id}` | Update a budget |
 | DELETE | `/budgets/{budget_id}` | Delete a budget |
@@ -125,7 +127,7 @@ Crossing a usage threshold (e.g. 90%/100% of `amount_limit`) creates a `Notifica
 | POST | `/goals` | Create a goal: `{ name, target_amount, target_date? }`. Manual contributions only for v1 — no mode tying progress to a linked account's live balance |
 | PATCH | `/goals/{goal_id}` | Update a goal |
 | DELETE | `/goals/{goal_id}` | Delete a goal |
-| POST | `/goals/{goal_id}/contributions` | Add a contribution: `{ amount, date, note? }` |
+| POST | `/goals/{goal_id}/contributions` | Add a contribution: `{ amount, date, note? }`. Returns the updated parent goal (fresh `progress_amount`), not the raw contribution — the caller never needs a second fetch to see new progress |
 
 Crossing a progress milestone (e.g. 50%/100% of `target_amount`) on this route creates a `Notification` (§13) — checked inline, not a scheduled job.
 

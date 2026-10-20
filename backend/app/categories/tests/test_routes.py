@@ -8,6 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
 from app.accounts.models import Account
+from app.budgets.models import Budget
 from app.categories.models import Category
 from app.transactions.models import Transaction
 
@@ -129,6 +130,44 @@ def test_delete_category_referenced_by_transaction_returns_409_unless_reassigned
 
     db.refresh(txn)
     assert str(txn.category_id) == other_category_id
+
+
+def test_delete_category_referenced_by_budget_returns_409_unless_reassigned(
+    client: TestClient, register_and_login: Callable[[str], tuple[str, uuid.UUID]], db: DbSession
+) -> None:
+    token, user_id = register_and_login("category-budget-deleter@example.com")
+    category_id = uuid.UUID(
+        client.post(
+            "/api/v1/categories",
+            json={"primary_category": "Groceries"},
+            headers=_auth_headers(token),
+        ).json()["data"]["id"]
+    )
+    other_category_id = client.post(
+        "/api/v1/categories", json={"primary_category": "Food"}, headers=_auth_headers(token)
+    ).json()["data"]["id"]
+
+    budget = Budget(
+        user_id=user_id,
+        category_id=category_id,
+        amount_limit=Decimal("100.00"),
+        start_date=date(2026, 1, 1),
+    )
+    db.add(budget)
+    db.commit()
+
+    conflict_resp = client.delete(f"/api/v1/categories/{category_id}", headers=_auth_headers(token))
+    assert conflict_resp.status_code == 409
+
+    ok_resp = client.delete(
+        f"/api/v1/categories/{category_id}",
+        params={"reassign_to": other_category_id},
+        headers=_auth_headers(token),
+    )
+    assert ok_resp.status_code == 204
+
+    db.refresh(budget)
+    assert str(budget.category_id) == other_category_id
 
 
 def test_delete_custom_category_with_no_references_succeeds(
