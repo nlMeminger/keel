@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     database_url: str = "postgresql+psycopg://moneyapp:moneyapp@localhost:5432/moneyapp"
     redis_url: str = "redis://localhost:6379/0"
 
-    jwt_signing_key: str = "dev-only-insecure-key-change-me"
+    jwt_signing_key: str = "dev-only-insecure-key-change-me-32-bytes-min"
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 30

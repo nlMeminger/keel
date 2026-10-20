@@ -10,6 +10,7 @@ dependencies = [
     "alembic>=1.13",
     "psycopg[binary]>=3.2",
     "pydantic>=2.9",
+    "pydantic[email]>=2.9",
     "pydantic-settings>=2.6",
     "pyjwt>=2.9",
     "bcrypt>=4.2",
@@ -34,6 +35,11 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+ignore = [
+    "B008",  # FastAPI's Depends()-in-default-argument is the idiomatic pattern, not a bug
+    "UP046", # keep typing.Generic[T] for Pydantic generic models (PEP 695 support varies by version)
+    "UP047", # same, for generic functions
+]
 
 [tool.mypy]
 python_version = "3.12"
