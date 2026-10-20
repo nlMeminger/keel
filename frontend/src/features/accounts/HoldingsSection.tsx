@@ -1,3 +1,4 @@
+import { Button, Group, Paper, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useState } from 'react'
 import { ApiError } from '../../lib/api-client'
 import { useCreateHolding, useDeleteHolding, useHoldings, useUpdateHolding } from './api'
@@ -29,77 +30,93 @@ export function HoldingsSection({ accountId }: { accountId: string }) {
   }
 
   return (
-    <div>
-      <h3>Holdings</h3>
+    <Stack mt="md" pl="md" style={{ borderLeft: '2px solid var(--mantine-color-default-border)' }}>
+      <Title order={4} size="h6">
+        Holdings
+      </Title>
       <form onSubmit={handleAdd}>
-        <input
-          placeholder="Symbol"
-          value={symbol}
-          onChange={(e) => setSymbol(e.target.value)}
-          required
-        />
-        <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} required />
-        <input
-          placeholder="Quantity"
-          type="number"
-          step="0.000001"
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
-          required
-        />
-        <input
-          placeholder="Cost basis"
-          type="number"
-          step="0.01"
-          value={costBasis}
-          onChange={(e) => setCostBasis(e.target.value)}
-          required
-        />
-        <button type="submit" disabled={createHolding.isPending}>
-          Add holding
-        </button>
+        <Group align="flex-end">
+          <TextInput
+            placeholder="Symbol"
+            value={symbol}
+            onChange={(e) => setSymbol(e.target.value)}
+            required
+          />
+          <TextInput
+            placeholder="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+          />
+          <TextInput
+            placeholder="Quantity"
+            type="number"
+            step="0.000001"
+            value={quantity}
+            onChange={(e) => setQuantity(e.target.value)}
+            required
+          />
+          <TextInput
+            placeholder="Cost basis"
+            type="number"
+            step="0.01"
+            value={costBasis}
+            onChange={(e) => setCostBasis(e.target.value)}
+            required
+          />
+          <Button type="submit" loading={createHolding.isPending}>
+            Add holding
+          </Button>
+        </Group>
       </form>
       {createHolding.isError && (
-        <p role="alert">
+        <Text role="alert" c="red" size="sm">
           {createHolding.error instanceof ApiError
             ? createHolding.error.message
             : 'Failed to add holding.'}
-        </p>
+        </Text>
       )}
       {isLoading || !holdings ? (
-        <p>Loading holdings…</p>
+        <Text>Loading holdings…</Text>
       ) : (
-        <ul>
+        <Stack gap="xs">
           {holdings.map((holding) => (
-            <li key={holding.id}>
-              {holding.symbol} — {holding.quantity} units, cost basis {holding.cost_basis}
-              {holding.current_value && ` (current value ${holding.current_value})`}
-              {holding.source === 'manual' && (
-                <>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const value = window.prompt('Current value?', holding.current_value ?? '')
-                      if (value !== null) {
-                        updateHolding.mutate({ id: holding.id, input: { current_value: value } })
-                      }
-                    }}
-                  >
-                    Set value
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => deleteHolding.mutate(holding.id)}
-                    disabled={deleteHolding.isPending}
-                  >
-                    Remove
-                  </button>
-                </>
-              )}
-            </li>
+            <Paper key={holding.id} withBorder p="sm" radius="sm">
+              <Group justify="space-between">
+                <Text size="sm">
+                  {holding.symbol} — {holding.quantity} units, cost basis {holding.cost_basis}
+                  {holding.current_value && ` (current value ${holding.current_value})`}
+                </Text>
+                {holding.source === 'manual' && (
+                  <Group gap="xs">
+                    <Button
+                      size="xs"
+                      variant="subtle"
+                      onClick={() => {
+                        const value = window.prompt('Current value?', holding.current_value ?? '')
+                        if (value !== null) {
+                          updateHolding.mutate({ id: holding.id, input: { current_value: value } })
+                        }
+                      }}
+                    >
+                      Set value
+                    </Button>
+                    <Button
+                      size="xs"
+                      variant="subtle"
+                      color="red"
+                      onClick={() => deleteHolding.mutate(holding.id)}
+                      loading={deleteHolding.isPending}
+                    >
+                      Remove
+                    </Button>
+                  </Group>
+                )}
+              </Group>
+            </Paper>
           ))}
-        </ul>
+        </Stack>
       )}
-    </div>
+    </Stack>
   )
 }

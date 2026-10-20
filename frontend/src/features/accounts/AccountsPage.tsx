@@ -1,3 +1,15 @@
+import {
+  Badge,
+  Button,
+  Checkbox,
+  Group,
+  NativeSelect,
+  Paper,
+  Stack,
+  Text,
+  TextInput,
+  Title,
+} from '@mantine/core'
 import { useState } from 'react'
 import { ApiError } from '../../lib/api-client'
 import {
@@ -84,59 +96,50 @@ function CreateAccountForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Add account</h2>
-      <label>
-        Name
-        <input value={name} onChange={(e) => setName(e.target.value)} required />
-      </label>
-      <label>
-        Type
-        <select
+    <Paper withBorder p="lg" radius="md" component="form" onSubmit={handleSubmit}>
+      <Stack>
+        <Title order={2} size="h4">
+          Add account
+        </Title>
+        <TextInput label="Name" value={name} onChange={(e) => setName(e.target.value)} required />
+        <NativeSelect
+          label="Type"
           value={accountType}
           onChange={(e) => {
             setAccountType(e.target.value as AccountType)
             setDetail({})
           }}
-        >
-          {ACCOUNT_TYPES.map((type) => (
-            <option key={type} value={type}>
-              {type}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label>
-        Balance
-        <input
+          data={ACCOUNT_TYPES.map((type) => ({ value: type, label: type }))}
+        />
+        <TextInput
+          label="Balance"
           type="number"
           step="0.01"
           value={balance}
           onChange={(e) => setBalance(e.target.value)}
           required
         />
-      </label>
-      {DETAIL_FIELDS[accountType].map((field) => (
-        <label key={field.key}>
-          {field.label}
-          <input
+        {DETAIL_FIELDS[accountType].map((field) => (
+          <TextInput
+            key={field.key}
+            label={field.label}
             value={detail[field.key] ?? ''}
             onChange={(e) => handleDetailChange(field.key, e.target.value)}
             required={field.required}
           />
-        </label>
-      ))}
-      {createAccount.isError && (
-        <p role="alert">
-          {createAccount.error instanceof ApiError
-            ? createAccount.error.message
-            : 'Failed to create account.'}
-        </p>
-      )}
-      <button type="submit" disabled={createAccount.isPending}>
-        Add account
-      </button>
-    </form>
+        ))}
+        {createAccount.isError && (
+          <Text role="alert" c="red" size="sm">
+            {createAccount.error instanceof ApiError
+              ? createAccount.error.message
+              : 'Failed to create account.'}
+          </Text>
+        )}
+        <Button type="submit" loading={createAccount.isPending}>
+          Add account
+        </Button>
+      </Stack>
+    </Paper>
   )
 }
 
@@ -155,43 +158,55 @@ function AccountRow({ account }: { account: Account }) {
   }
 
   return (
-    <li>
+    <Paper component="li" withBorder p="md" radius="md" style={{ listStyle: 'none' }}>
       {editing ? (
-        <>
-          <input value={name} onChange={(e) => setName(e.target.value)} />
-          <input
+        <Group>
+          <TextInput value={name} onChange={(e) => setName(e.target.value)} />
+          <TextInput
             type="number"
             step="0.01"
             value={balance}
             onChange={(e) => setBalance(e.target.value)}
           />
-          <button type="button" onClick={handleSave} disabled={updateAccount.isPending}>
+          <Button size="sm" onClick={handleSave} loading={updateAccount.isPending}>
             Save
-          </button>
-          <button type="button" onClick={() => setEditing(false)}>
+          </Button>
+          <Button size="sm" variant="subtle" onClick={() => setEditing(false)}>
             Cancel
-          </button>
-        </>
+          </Button>
+        </Group>
       ) : (
-        <>
-          <strong>{account.name}</strong> ({account.account_type}) — {account.balance}
-          {!account.is_active && ' [deactivated]'}
-          <button type="button" onClick={() => setEditing(true)}>
-            Edit
-          </button>
-          {account.is_active && (
-            <button
-              type="button"
-              onClick={() => deactivateAccount.mutate(account.id)}
-              disabled={deactivateAccount.isPending}
-            >
-              Deactivate
-            </button>
-          )}
-        </>
+        <Group justify="space-between">
+          <Group gap="xs">
+            <Text fw={500}>{account.name}</Text>
+            <Badge variant="light">{account.account_type}</Badge>
+            <Text c="dimmed">{account.balance}</Text>
+            {!account.is_active && (
+              <Badge color="gray" variant="light">
+                deactivated
+              </Badge>
+            )}
+          </Group>
+          <Group gap="xs">
+            <Button size="sm" variant="subtle" onClick={() => setEditing(true)}>
+              Edit
+            </Button>
+            {account.is_active && (
+              <Button
+                size="sm"
+                variant="subtle"
+                color="red"
+                onClick={() => deactivateAccount.mutate(account.id)}
+                loading={deactivateAccount.isPending}
+              >
+                Deactivate
+              </Button>
+            )}
+          </Group>
+        </Group>
       )}
       {account.account_type === 'investment' && <HoldingsSection accountId={account.id} />}
-    </li>
+    </Paper>
   )
 }
 
@@ -200,26 +215,23 @@ export function AccountsPage() {
   const { data: accounts, isLoading } = useAccounts({ active: !showInactive })
 
   return (
-    <main>
-      <h1>Accounts</h1>
+    <Stack>
+      <Title order={1}>Accounts</Title>
       <CreateAccountForm />
-      <label>
-        <input
-          type="checkbox"
-          checked={showInactive}
-          onChange={(e) => setShowInactive(e.target.checked)}
-        />
-        Show deactivated accounts only
-      </label>
+      <Checkbox
+        label="Show deactivated accounts only"
+        checked={showInactive}
+        onChange={(e) => setShowInactive(e.target.checked)}
+      />
       {isLoading || !accounts ? (
-        <p>Loading accounts…</p>
+        <Text>Loading accounts…</Text>
       ) : (
-        <ul>
+        <Stack gap="sm" component="ul" style={{ padding: 0 }}>
           {accounts.map((account) => (
             <AccountRow key={account.id} account={account} />
           ))}
-        </ul>
+        </Stack>
       )}
-    </main>
+    </Stack>
   )
 }
