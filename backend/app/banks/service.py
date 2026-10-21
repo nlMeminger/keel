@@ -260,33 +260,42 @@ def _pull_holdings(
     db.commit()
 
 
-def unlink_bank(db: DbSession, user: User, bank_id: uuid.UUID) -> None:
-    """DELETE /banks/{bank_id} (API_SPEC.md §3) — calls Plaid's item/remove, then hard-
-    deletes the Bank row while retaining the PlaidItem (removed_at set), so the ghost-item
-    check (7.11) has something to verify against. The bank's own accounts never keep a
-    dangling bank_id (ON DELETE SET NULL) and are explicitly deactivated rather than left
-    looking like live manual accounts.
+def remove_plaid_item(db: DbSession, user_id: uuid.UUID, item: PlaidItem) -> None:
+    """Calls Plaid's item/remove and sets `removed_at`, if not already done.
+
+    Shared by self-service unlink (below, gated on ensure_plaid_enabled) and an admin's
+    hard-delete of a user (app.admin.service.delete_user, never gated on it — the cleanup
+    must still run for a user whose Plaid access an admin already disabled).
 
     Idempotent on removed_at: calling Plaid's item/remove twice on the same access_token is
     a real error on Plaid's side (ITEM_NOT_FOUND) — skipping the call once already removed
     avoids ever hitting that, covering a retried request that raced ahead of the first
     attempt's commit.
     """
+    if item.removed_at is not None:
+        return
+    access_token = decrypt(item.access_token)
+    client = get_plaid_client()
+    call_plaid(
+        db,
+        user_id,
+        "item_remove",
+        lambda: client.item_remove(ItemRemoveRequest(access_token=access_token)),
+    )
+    item.removed_at = datetime.now(UTC)
+    db.commit()
+
+
+def unlink_bank(db: DbSession, user: User, bank_id: uuid.UUID) -> None:
+    """DELETE /banks/{bank_id} (API_SPEC.md §3) — calls Plaid's item/remove, then hard-
+    deletes the Bank row while retaining the PlaidItem (removed_at set), so the ghost-item
+    check (7.11) has something to verify against. The bank's own accounts never keep a
+    dangling bank_id (ON DELETE SET NULL) and are explicitly deactivated rather than left
+    looking like live manual accounts.
+    """
     bank, item = get_bank_with_item(db, user, bank_id)
     ensure_plaid_enabled(db, user)
-
-    if item.removed_at is None:
-        access_token = decrypt(item.access_token)
-        client = get_plaid_client()
-        call_plaid(
-            db,
-            user.id,
-            "item_remove",
-            lambda: client.item_remove(ItemRemoveRequest(access_token=access_token)),
-        )
-        item.removed_at = datetime.now(UTC)
-        db.commit()
-
+    remove_plaid_item(db, user.id, item)
     db.execute(update(Account).where(Account.bank_id == bank.id).values(is_active=False))
     db.delete(bank)
     db.commit()

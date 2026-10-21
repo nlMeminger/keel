@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.accounts.router import router as accounts_router
+from app.admin.users_router import router as admin_users_router
 from app.assets.router import router as assets_router
 from app.auth.router import router as auth_router
 from app.banks.router import router as banks_router
@@ -36,6 +37,7 @@ app.add_middleware(
 register_error_handlers(app)
 
 app.include_router(accounts_router, prefix="/api/v1")
+app.include_router(admin_users_router, prefix="/api/v1")
 app.include_router(assets_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")
 app.include_router(banks_router, prefix="/api/v1")
