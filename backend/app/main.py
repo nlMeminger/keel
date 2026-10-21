@@ -5,6 +5,7 @@ from app.accounts.router import router as accounts_router
 from app.admin.log_capture import install_log_capture
 from app.admin.operations_router import router as admin_operations_router
 from app.admin.plaid_stats_router import router as admin_plaid_stats_router
+from app.admin.tokens_router import router as admin_tokens_router
 from app.admin.users_router import router as admin_users_router
 from app.assets.router import router as assets_router
 from app.auth.router import router as auth_router
@@ -43,6 +44,7 @@ install_log_capture()
 app.include_router(accounts_router, prefix="/api/v1")
 app.include_router(admin_operations_router, prefix="/api/v1")
 app.include_router(admin_plaid_stats_router, prefix="/api/v1")
+app.include_router(admin_tokens_router, prefix="/api/v1")
 app.include_router(admin_users_router, prefix="/api/v1")
 app.include_router(assets_router, prefix="/api/v1")
 app.include_router(auth_router, prefix="/api/v1")

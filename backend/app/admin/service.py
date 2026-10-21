@@ -1,11 +1,11 @@
 import uuid
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session as DbSession
 
-from app.admin.models import LogEntry
+from app.admin.models import ApiToken, LogEntry
 from app.admin.schemas import (
     AdminConfigResponseData,
     AdminUserPublic,
@@ -23,7 +23,7 @@ from app.celery_app import celery_app
 from app.config import settings
 from app.core.errors import AppError
 from app.core.plaid_client import calls_this_month
-from app.core.security import generate_opaque_token, hash_password
+from app.core.security import generate_opaque_token, hash_password, hash_token
 from app.jobs.models import Job
 from app.jobs.service import create_job
 from app.sync.tasks import scheduled_sync_balances_task, scheduled_sync_transactions_task
@@ -293,3 +293,62 @@ def list_plaid_calls_stmt(
     if date_to is not None:
         stmt = stmt.where(PlaidAPICall.created_at <= date_to)
     return stmt
+
+
+def list_api_tokens_stmt() -> Select[ApiToken]:
+    return select(ApiToken).order_by(ApiToken.created_at.desc())
+
+
+def get_api_token(db: DbSession, token_id: uuid.UUID) -> ApiToken:
+    token = db.get(ApiToken, token_id)
+    if token is None:
+        raise AppError(404, "not_found", "API token not found.")
+    return token
+
+
+def create_api_token(
+    db: DbSession,
+    admin: User,
+    user_id: uuid.UUID,
+    label: str,
+    scopes: list[str],
+    expires_at: datetime | None,
+) -> tuple[ApiToken, str]:
+    """POST /admin/api-tokens (API_SPEC.md §18) — binds the token to `user_id`; requests
+    authenticated with it act as that user, never with admin-level access regardless of
+    who issued it. The raw secret is returned here, once, and never stored or shown again."""
+    if db.get(User, user_id) is None:
+        raise AppError(404, "not_found", "User not found.")
+    secret = generate_opaque_token()
+    token = ApiToken(
+        user_id=user_id,
+        created_by_admin_id=admin.id,
+        label=label,
+        scopes=scopes,
+        token_hash=hash_token(secret),
+        expires_at=expires_at,
+    )
+    db.add(token)
+    db.commit()
+    db.refresh(token)
+    return token, secret
+
+
+def update_api_token(
+    db: DbSession, token: ApiToken, label: str | None, expires_at: datetime | None
+) -> ApiToken:
+    """PATCH /admin/api-tokens/{id} — renames the label or changes `expires_at` only; not
+    secret rotation (revoke + reissue is the only way to change the secret itself)."""
+    if label is not None:
+        token.label = label
+    if expires_at is not None:
+        token.expires_at = expires_at
+    db.commit()
+    db.refresh(token)
+    return token
+
+
+def revoke_api_token(db: DbSession, token: ApiToken) -> None:
+    if token.revoked_at is None:
+        token.revoked_at = datetime.now(UTC)
+        db.commit()

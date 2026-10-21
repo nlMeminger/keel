@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 from app.jobs.models import Job
 from app.sync.schemas import JobProgress
@@ -154,3 +154,43 @@ class PlaidApiCallPublic(BaseModel):
     status: str
     error_code: str | None
     created_at: datetime
+
+
+def _validate_scopes(scopes: list[str]) -> list[str]:
+    """API_SPEC.md §18: scopes is exactly `["read"]` or `["read","write"]` — never `["write"]`
+    alone, never duplicates, never any other value."""
+    if set(scopes) not in ({"read"}, {"read", "write"}) or len(scopes) != len(set(scopes)):
+        raise ValueError('scopes must be exactly ["read"] or ["read", "write"]')
+    return scopes
+
+
+class AdminApiTokenCreateRequest(BaseModel):
+    user_id: uuid.UUID
+    label: str = Field(min_length=1)
+    scopes: list[Literal["read", "write"]]
+    expires_at: datetime | None = None
+
+    _validate_scopes = field_validator("scopes")(_validate_scopes)
+
+
+class AdminApiTokenUpdateRequest(BaseModel):
+    label: str | None = Field(default=None, min_length=1)
+    expires_at: datetime | None = None
+
+
+class AdminApiTokenPublic(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    user_id: uuid.UUID
+    label: str
+    scopes: list[str]
+    created_at: datetime
+    last_used_at: datetime | None
+    expires_at: datetime | None
+    revoked_at: datetime | None
+
+
+class AdminApiTokenCreateResponseData(BaseModel):
+    token: AdminApiTokenPublic
+    secret: str

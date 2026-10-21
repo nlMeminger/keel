@@ -9,6 +9,9 @@ from app.core.errors import AppError
 LOGIN_LIMIT = (5, 900)  # 5 attempts / 15 min, per IP+username
 REGISTER_LIMIT = (10, 3600)  # 10 / hour, per IP
 REFRESH_LIMIT = (30, 3600)  # 30 / hour, per user
+# API_SPEC.md §18 starting point — independent of the Plaid monthly-call cap, which
+# throttles Plaid cost rather than external API usage.
+API_TOKEN_LIMIT = (60, 60)  # 60 requests / minute, per token
 
 _clients: dict[str, redis.Redis[str]] = {}
 
