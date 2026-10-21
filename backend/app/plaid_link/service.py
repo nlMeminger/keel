@@ -67,9 +67,7 @@ def create_link_token_for_reauth(
     _, item = banks_service.get_bank_with_item(db, user, bank_id)
     client = get_plaid_client()
     try:
-        plaid_user_id = client.user_create(
-            UserCreateRequest(client_user_id=str(user.id))
-        ).user_id
+        plaid_user_id = client.user_create(UserCreateRequest(client_user_id=str(user.id))).user_id
         request = LinkTokenCreateRequest(
             client_name=CLIENT_NAME,
             language=LANGUAGE,
@@ -105,7 +103,7 @@ def exchange_public_token(db: DbSession, user: User, public_token: str) -> tuple
     except ApiException as exc:
         raise plaid_error_to_app_error(exc) from exc
 
-    return banks_service.create_bank_from_exchange(
+    bank, created_item = banks_service.create_bank_from_exchange(
         db,
         user,
         access_token=exchange.access_token,
@@ -113,3 +111,7 @@ def exchange_public_token(db: DbSession, user: User, public_token: str) -> tuple
         institution_id=institution_id,
         institution_name=institution.name,
     )
+    # A Bank can briefly exist with zero accounts (ROADMAP 7.1) — this closes that window
+    # immediately rather than waiting for the first scheduled/manual sync.
+    banks_service.pull_accounts_and_holdings(db, user, bank, created_item)
+    return bank, created_item

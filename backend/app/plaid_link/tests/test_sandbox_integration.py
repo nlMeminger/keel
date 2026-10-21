@@ -45,9 +45,7 @@ def test_link_token_create_against_real_sandbox(
 ) -> None:
     token, _user_id = register_and_login("linker@example.com")
 
-    response = client.post(
-        "/api/v1/plaid/link-token", headers={"Authorization": f"Bearer {token}"}
-    )
+    response = client.post("/api/v1/plaid/link-token", headers={"Authorization": f"Bearer {token}"})
 
     assert response.status_code == 200
     data = response.json()["data"]

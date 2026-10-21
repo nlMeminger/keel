@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session as DbSession
 
 from app.auth.models import User
+from app.banks import service as banks_service
 from app.banks.schemas import BankPublic
 from app.core.envelope import Envelope
 from app.database import get_db
@@ -35,4 +36,5 @@ def exchange_token(
     user: User = Depends(get_current_user),
 ) -> dict[str, BankPublic]:
     bank, item = service.exchange_public_token(db, user, body.public_token)
-    return {"data": BankPublic.from_bank(bank, item)}
+    account_count = banks_service.count_active_accounts(db, bank.id)
+    return {"data": BankPublic.from_bank(bank, item, account_count)}

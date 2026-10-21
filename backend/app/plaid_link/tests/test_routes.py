@@ -18,9 +18,7 @@ def test_exchange_token_requires_auth(client: TestClient) -> None:
 
 
 def test_link_token_update_requires_auth(client: TestClient) -> None:
-    response = client.post(
-        "/api/v1/plaid/link-token/update", json={"bank_id": str(uuid.uuid4())}
-    )
+    response = client.post("/api/v1/plaid/link-token/update", json={"bank_id": str(uuid.uuid4())})
     assert response.status_code == 401
 
 

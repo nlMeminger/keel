@@ -40,11 +40,13 @@ This `Session` table is also what the admin `revoke-sessions` endpoint (§18) an
 | POST | `/plaid/link-token/update` | Create a Link token in update mode for a reauth-needed bank |
 | POST | `/plaid/exchange-token` | Exchange `public_token` for access token, create the bank connection |
 
+Update-mode (`/plaid/link-token/update`) additionally requires a Plaid-side `user_id`, obtained via the idempotent `/user/create` (same `client_user_id` always returns the same `user_id`, so this is never a duplicate-creation risk) — Plaid began enforcing this on every update-mode request regardless of product usage, not just consumer-report-style products. `exchange-token` also triggers the initial accounts/holdings pull synchronously (see §3/§4) rather than waiting for the first sync job.
+
 ## 3. Banks (linked connections)
 | Method | Path | Description |
 |---|---|---|
-| GET | `/banks` | List linked banks for current user, with health status |
-| GET | `/banks/{bank_id}` | Bank detail (institution, linked accounts, last sync, health) |
+| GET | `/banks` | List linked banks for current user: institution, `health`, `last_synced_at`, `account_count` |
+| GET | `/banks/{bank_id}` | Same shape as one row above — linked accounts themselves come from `GET /accounts?bank_id=`, not nested here |
 | DELETE | `/banks/{bank_id}` | Unlink a bank — calls Plaid's `item/remove`, then soft-deletes the `Plaid_item` (`removed_at` set, row retained rather than dropped, so a later ghost-item check has something to verify against, see §17/§18) |
 | POST | `/banks/{bank_id}/sync` | Force an immediate sync for this bank — returns `202` + job id (see §16) |
 
@@ -53,7 +55,7 @@ This `Session` table is also what the admin `revoke-sessions` endpoint (§18) an
 ## 4. Accounts
 | Method | Path | Description |
 |---|---|---|
-| GET | `/accounts` | List accounts (filter: `type`, `bank_id`, `active`). `bank_id` isn't implemented as of Phase 4 — that column doesn't exist until Phase 7.1/7.3 adds it alongside real Plaid linking |
+| GET | `/accounts` | List accounts (filter: `type`, `bank_id`, `active`) |
 | GET | `/accounts/{account_id}` | Account detail |
 | POST | `/accounts` | Create a manual (non-Plaid) account |
 | PATCH | `/accounts/{account_id}` | Update account (name, type-specific fields) |

@@ -15,15 +15,17 @@ class BankPublic(BaseModel):
     institution_name: str
     health: str
     last_synced_at: datetime | None
+    account_count: int
     created_at: datetime
 
     @classmethod
-    def from_bank(cls, bank: Bank, item: PlaidItem) -> "BankPublic":
+    def from_bank(cls, bank: Bank, item: PlaidItem, account_count: int) -> "BankPublic":
         return cls(
             id=bank.id,
             institution_id=item.institution_id,
             institution_name=item.institution_name,
             health=bank.health,
             last_synced_at=bank.last_synced_at,
+            account_count=account_count,
             created_at=bank.created_at,
         )
