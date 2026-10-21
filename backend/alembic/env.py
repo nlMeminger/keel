@@ -6,6 +6,7 @@ from alembic import context
 from app.accounts import models as accounts_models  # noqa: F401
 from app.assets import models as assets_models  # noqa: F401
 from app.auth import models as auth_models  # noqa: F401
+from app.banks import models as banks_models  # noqa: F401
 from app.budgets import models as budgets_models  # noqa: F401
 from app.categories import models as categories_models  # noqa: F401
 from app.category_rules import models as category_rules_models  # noqa: F401

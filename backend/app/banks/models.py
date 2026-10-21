@@ -1,0 +1,63 @@
+import uuid
+from datetime import datetime
+
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, func
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.database import Base
+
+BANK_HEALTH_STATUSES = ("healthy", "needs_reauth", "error")
+
+
+class PlaidItem(Base):
+    """One Plaid Item per bank connection (SPEC.md §5). `access_token` is encrypted at rest
+    (app.core.encryption) — reversible, since the app must decrypt and reuse it on every
+    Plaid call, unlike Session/ApiToken's one-way-hashed secrets."""
+
+    __tablename__ = "plaid_items"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    access_token: Mapped[str]
+    item_id: Mapped[str] = mapped_column(unique=True, index=True)
+    institution_id: Mapped[str]
+    institution_name: Mapped[str]
+    # Unset until the first /transactions/sync call for this item; passed back on every
+    # later call so only what changed since is returned.
+    cursor: Mapped[str | None] = mapped_column(default=None)
+    # Set on unlink (DELETE /banks/{id}, or an admin hard-deleting a user) — row retained
+    # rather than dropped so the ghost-item check (7.11) has something to verify against.
+    removed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class Bank(Base):
+    """A user's linked bank connection, one-to-one with a PlaidItem (API_SPEC.md §3)."""
+
+    __tablename__ = "banks"
+    __table_args__ = (
+        CheckConstraint("health IN ('healthy','needs_reauth','error')", name="ck_banks_health"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    owner_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    plaid_item_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("plaid_items.id", ondelete="CASCADE"), unique=True
+    )
+    # Set from Plaid's own signals (a webhook or an API error like ITEM_LOGIN_REQUIRED),
+    # never user-editable directly.
+    health: Mapped[str] = mapped_column(default="healthy", server_default="healthy")
+    # Unset until the first sync completes — a Bank can briefly have zero accounts (Link
+    # succeeded, first account pull hasn't run yet) without that being an error state.
+    last_synced_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
