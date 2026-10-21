@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session as DbSession
 
 from app.accounts.models import Account
 from app.auth.models import User
+from app.budgets import service as budgets_service
 from app.categories.models import Category
 from app.core.errors import AppError
 from app.merchants.models import Merchant
@@ -71,6 +72,7 @@ def create_transaction(
 
     detect_transfer_candidates(db, txn)
     db.refresh(txn)
+    budgets_service.notify_threshold_crossings_for_user(db, user)
     return txn
 
 
@@ -176,6 +178,7 @@ def update_transaction(
         else:
             reject_transfer(db, txn, paired)
 
+    budgets_service.notify_threshold_crossings_for_user(db, user)
     db.refresh(txn)
     return txn
 

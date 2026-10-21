@@ -159,7 +159,7 @@ Manual create/edit/payment-tracking ships in v1. Scheduled auto-detection (`proc
 | PATCH | `/notifications/{id}` | `{ read: bool }` — sets or clears `read_at` |
 | DELETE | `/notifications/{id}` | Dismiss |
 
-No `POST` — notifications are only ever created server-side. v1 triggers: a budget crossing a usage threshold (§9), a savings goal crossing a progress milestone (§10), and a bank needing reauth (from Plaid webhook/sync handling, §17). Recurring-bill reminders are deferred post-v1 along with auto-detection (§11, [ROADMAP.md](ROADMAP.md) Deferred section).
+No `POST` — notifications are only ever created server-side. v1 triggers: a budget crossing a usage threshold (§9), a savings goal crossing a progress milestone (§10), and a bank needing reauth (from Plaid webhook/sync handling, §17). Recurring-bill reminders are deferred post-v1 along with auto-detection (§11, [ROADMAP.md](ROADMAP.md) Deferred section). Threshold/milestone notifications use a dedicated `type` per threshold (e.g. `budget_threshold_90`, `goal_milestone_50`) so the write path that creates them can check for a prior notification of that same type against the same `related_id` before creating a duplicate — a budget's dedup window is scoped to its current period (so next month's crossing still notifies), a goal's is unscoped (it has no period, so each milestone notifies at most once ever).
 
 ## 14. Metrics (manual history entries)
 Needed because the app must run fully without any Plaid connection — manual accounts and transactions already cover that, but there's no way to log a point-in-time value that isn't an account balance (e.g. credit score), or to backfill history for a manual account at all.

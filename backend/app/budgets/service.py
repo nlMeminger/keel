@@ -1,6 +1,6 @@
 import calendar
 import uuid
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, time
 from decimal import Decimal
 
 from sqlalchemy import Select, func, select
@@ -10,7 +10,12 @@ from app.auth.models import User
 from app.budgets.models import Budget
 from app.categories.models import Category
 from app.core.errors import AppError
+from app.notifications import service as notifications_service
 from app.transactions.models import Transaction
+
+#: Percent-of-limit thresholds that create a Notification the first time they're crossed
+#: within a budget's current period (API_SPEC.md §9).
+THRESHOLD_PERCENTAGES = (90, 100)
 
 
 def _validate_category_visible(db: DbSession, user: User, category_id: uuid.UUID | None) -> None:
@@ -105,3 +110,43 @@ def delete_budget(db: DbSession, user: User, budget_id: uuid.UUID) -> None:
     budget = get_budget(db, user, budget_id)
     db.delete(budget)
     db.commit()
+
+
+def _notify_if_threshold_crossed(db: DbSession, user: User, budget: Budget) -> None:
+    """Checked inline from the transaction write paths that can move spend-so-far (API_SPEC.md
+    §9), not a scheduled job. Dedup is scoped to the budget's current period (via `since`) so
+    a monthly budget's 90%/100% notifications fire again once a new period starts, instead of
+    at most once ever."""
+    if budget.amount_limit <= 0:
+        return
+    spend = compute_budget_spend(db, user, budget)
+    percent = (spend / budget.amount_limit) * 100
+    period_start, _period_end = _current_period_bounds(budget.start_date)
+    since = datetime.combine(period_start, time.min, tzinfo=UTC)
+
+    for threshold in THRESHOLD_PERCENTAGES:
+        if percent < threshold:
+            continue
+        notification_type = f"budget_threshold_{threshold}"
+        if notifications_service.notification_already_sent(
+            db, user.id, notification_type, "budget", budget.id, since=since
+        ):
+            continue
+        scope = "Overall budget" if budget.category_id is None else "Budget"
+        notifications_service.create_notification(
+            db,
+            user.id,
+            notification_type,
+            title=f"{scope} at {threshold}% of its limit",
+            body=f"You've spent {spend} of {budget.amount_limit} this period ({threshold}%+).",
+            related_type="budget",
+            related_id=budget.id,
+        )
+
+
+def notify_threshold_crossings_for_user(db: DbSession, user: User) -> None:
+    """Called inline after any transaction write that could change spend-so-far — an overall
+    budget's spend can move from a transaction in *any* category, so every one of the user's
+    budgets is re-checked rather than just ones matching the written transaction's category."""
+    for budget in db.scalars(select(Budget).where(Budget.user_id == user.id)):
+        _notify_if_threshold_crossed(db, user, budget)

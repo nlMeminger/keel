@@ -8,6 +8,12 @@ from sqlalchemy.orm import Session as DbSession
 from app.auth.models import User
 from app.core.errors import AppError
 from app.goals.models import GoalContribution, SavingsGoal
+from app.notifications import service as notifications_service
+
+#: Percent-of-target milestones that create a Notification the first time they're crossed
+#: (API_SPEC.md §10). Goals have no period to reset within, unlike budgets — each milestone
+#: notifies at most once ever per goal.
+MILESTONE_PERCENTAGES = (50, 100)
 
 
 def compute_goal_progress(db: DbSession, goal_id: uuid.UUID) -> Decimal:
@@ -70,6 +76,33 @@ def delete_goal(db: DbSession, user: User, goal_id: uuid.UUID) -> None:
     db.commit()
 
 
+def _notify_if_milestone_crossed(db: DbSession, user: User, goal: SavingsGoal) -> None:
+    """Checked inline on every contribution (API_SPEC.md §10), not a scheduled job. No period
+    to scope dedup to — a milestone notifies at most once ever per goal."""
+    if goal.target_amount <= 0:
+        return
+    progress = compute_goal_progress(db, goal.id)
+    percent = (progress / goal.target_amount) * 100
+
+    for threshold in MILESTONE_PERCENTAGES:
+        if percent < threshold:
+            continue
+        notification_type = f"goal_milestone_{threshold}"
+        if notifications_service.notification_already_sent(
+            db, user.id, notification_type, "savings_goal", goal.id
+        ):
+            continue
+        notifications_service.create_notification(
+            db,
+            user.id,
+            notification_type,
+            title=f'"{goal.name}" reached {threshold}% of its target',
+            body=f"Progress is now {progress} of {goal.target_amount}.",
+            related_type="savings_goal",
+            related_id=goal.id,
+        )
+
+
 def add_contribution(
     db: DbSession,
     user: User,
@@ -86,5 +119,6 @@ def add_contribution(
     )
     db.add(contribution)
     db.commit()
+    _notify_if_milestone_crossed(db, user, goal)
     db.refresh(goal)
     return goal

@@ -250,6 +250,54 @@ def test_nonexistent_budget_returns_404(
     assert resp.status_code == 404
 
 
+def test_crossing_90_and_100_percent_creates_exactly_one_notification_each(
+    client: TestClient, register_and_login: Callable[[str], tuple[str, uuid.UUID]]
+) -> None:
+    token, _user_id = register_and_login("budget-threshold@example.com")
+    account_id = _create_account(client, token)
+    client.post(
+        "/api/v1/budgets",
+        json={"amount_limit": "100.00", "start_date": _today_in_current_month(1)},
+        headers=_auth_headers(token),
+    )
+
+    def _spend(amount: str) -> None:
+        client.post(
+            "/api/v1/transactions",
+            json={
+                "account_id": account_id,
+                "amount": amount,
+                "description": "spend",
+                "date": _today_in_current_month(10),
+            },
+            headers=_auth_headers(token),
+        )
+
+    def _notification_types() -> list[str]:
+        resp = client.get("/api/v1/notifications", headers=_auth_headers(token))
+        return [row["type"] for row in resp.json()["data"]]
+
+    _spend("-50.00")
+    assert _notification_types() == []
+
+    # Crosses 90% (now at 90/100).
+    _spend("-40.00")
+    assert _notification_types() == ["budget_threshold_90"]
+
+    # Still above 90%, not yet 100% — must not duplicate the 90% notification.
+    _spend("-5.00")
+    assert _notification_types() == ["budget_threshold_90"]
+
+    # Crosses 100%.
+    _spend("-10.00")
+    types = _notification_types()
+    assert sorted(types) == ["budget_threshold_100", "budget_threshold_90"]
+
+    # Further spend past 100% must not duplicate either notification again.
+    _spend("-1.00")
+    assert sorted(_notification_types()) == ["budget_threshold_100", "budget_threshold_90"]
+
+
 def test_a_second_users_token_cannot_see_or_modify_the_first_users_budget(
     client: TestClient, register_and_login: Callable[[str], tuple[str, uuid.UUID]]
 ) -> None:
