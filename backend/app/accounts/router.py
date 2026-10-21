@@ -1,4 +1,5 @@
 import uuid
+from datetime import date
 
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session as DbSession
@@ -6,9 +7,11 @@ from sqlalchemy.orm import Session as DbSession
 from app.accounts import service
 from app.accounts.schemas import AccountCreateRequest, AccountPublic, AccountUpdateRequest
 from app.auth.models import User
-from app.core.envelope import Envelope, paginate
+from app.core.envelope import Envelope, paginate, single_page
 from app.database import get_db
 from app.dependencies import PaginationParams, get_current_user, pagination_params
+from app.metrics import service as metrics_service
+from app.metrics.schemas import MetricPublic
 
 router = APIRouter(prefix="/accounts", tags=["accounts"])
 
@@ -78,3 +81,26 @@ def deactivate_account(
     account_id: uuid.UUID, db: DbSession = Depends(get_db), user: User = Depends(get_current_user)
 ) -> None:
     service.deactivate_account(db, user, account_id)
+
+
+@router.get("/{account_id}/balance-history")
+def account_balance_history(
+    account_id: uuid.UUID,
+    date_from: date | None = Query(default=None),
+    date_to: date | None = Query(default=None),
+    db: DbSession = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> dict[str, object]:
+    """Convenience read over `/metrics?type=account_balance&account_id=...` for charting one
+    account (API_SPEC.md §15) — same ownership check as every other /accounts/{id} route."""
+    service.get_account(db, user, account_id)
+    stmt = metrics_service.list_metrics_stmt(
+        user,
+        metric_type="account_balance",
+        account_id=account_id,
+        asset_id=None,
+        date_from=date_from,
+        date_to=date_to,
+    )
+    rows = db.scalars(stmt).all()
+    return single_page([MetricPublic.model_validate(row) for row in rows])

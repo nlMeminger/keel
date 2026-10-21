@@ -204,3 +204,48 @@ def test_a_second_users_token_cannot_see_or_modify_the_first_users_account(
     assert (
         client.delete(f"/api/v1/accounts/{account_id}", headers=intruder_headers).status_code == 404
     )
+
+
+def test_balance_history_reflects_every_balance_change(
+    client: TestClient, register_and_login: Callable[[str], tuple[str, uuid.UUID]]
+) -> None:
+    token, _user_id = register_and_login("balance-history@example.com")
+    account_id = client.post(
+        "/api/v1/accounts",
+        json={"name": "Checking", "account_type": "checking", "balance": "100.00"},
+        headers=_auth_headers(token),
+    ).json()["data"]["id"]
+
+    client.patch(
+        f"/api/v1/accounts/{account_id}", json={"balance": "150.00"}, headers=_auth_headers(token)
+    )
+    client.patch(
+        f"/api/v1/accounts/{account_id}", json={"balance": "200.00"}, headers=_auth_headers(token)
+    )
+
+    resp = client.get(
+        f"/api/v1/accounts/{account_id}/balance-history", headers=_auth_headers(token)
+    )
+    assert resp.status_code == 200
+    rows = resp.json()["data"]
+    # Two PATCHes wrote two entries; the initial balance at account-creation time never writes
+    # one (4.9 only fires on a *change*) — order between same-day entries isn't guaranteed.
+    assert {row["value"] for row in rows} == {"150.00", "200.00"}
+    assert all(row["account_id"] == account_id for row in rows)
+
+
+def test_balance_history_for_another_users_account_returns_404(
+    client: TestClient, register_and_login: Callable[[str], tuple[str, uuid.UUID]]
+) -> None:
+    owner_token, _owner_id = register_and_login("balance-history-owner@example.com")
+    account_id = client.post(
+        "/api/v1/accounts",
+        json={"name": "Private", "account_type": "checking", "balance": "0"},
+        headers=_auth_headers(owner_token),
+    ).json()["data"]["id"]
+
+    intruder_token, _intruder_id = register_and_login("balance-history-intruder@example.com")
+    resp = client.get(
+        f"/api/v1/accounts/{account_id}/balance-history", headers=_auth_headers(intruder_token)
+    )
+    assert resp.status_code == 404
