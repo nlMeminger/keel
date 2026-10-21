@@ -1,8 +1,12 @@
 import { Route, Routes } from 'react-router-dom'
+import { AdminRoute } from './components/AdminRoute'
 import { AppLayout } from './components/AppLayout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AccountDetailPage } from './features/accounts/AccountDetailPage'
 import { AccountsPage } from './features/accounts/AccountsPage'
+import { AuditLogPage } from './features/admin/audit-log/AuditLogPage'
+import { UserDetailPage } from './features/admin/users/UserDetailPage'
+import { UsersPage } from './features/admin/users/UsersPage'
 import { AssetsPage } from './features/assets/AssetsPage'
 import { BankDetailPage } from './features/banks/BankDetailPage'
 import { BanksPage } from './features/banks/BanksPage'
@@ -43,6 +47,11 @@ function App() {
           <Route path="/recurring-transactions" element={<RecurringTransactionsPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
           <Route path="/settings/sessions" element={<SessionsPage />} />
+          <Route element={<AdminRoute />}>
+            <Route path="/admin/users" element={<UsersPage />} />
+            <Route path="/admin/users/:userId" element={<UserDetailPage />} />
+            <Route path="/admin/audit-log" element={<AuditLogPage />} />
+          </Route>
         </Route>
       </Route>
     </Routes>

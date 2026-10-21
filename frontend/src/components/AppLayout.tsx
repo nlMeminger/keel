@@ -2,10 +2,12 @@ import {
   ActionIcon,
   AppShell,
   Burger,
+  Divider,
   Group,
   Menu,
   NavLink,
   Stack,
+  Text,
   Title,
   useComputedColorScheme,
   useMantineColorScheme,
@@ -19,6 +21,7 @@ import {
   IconCalendarRepeat,
   IconChartPie,
   IconChevronDown,
+  IconClipboardList,
   IconDevices,
   IconLayoutDashboard,
   IconLogout,
@@ -28,6 +31,7 @@ import {
   IconSun,
   IconTags,
   IconTarget,
+  IconUsers,
   IconWallet,
   IconWand,
 } from '@tabler/icons-react'
@@ -49,6 +53,11 @@ const navItems = [
   { to: '/assets', label: 'Assets', icon: IconPigMoney },
   { to: '/notifications', label: 'Notifications', icon: IconBell },
   { to: '/settings/sessions', label: 'Sessions', icon: IconDevices },
+]
+
+const adminNavItems = [
+  { to: '/admin/users', label: 'Users', icon: IconUsers },
+  { to: '/admin/audit-log', label: 'Audit log', icon: IconClipboardList },
 ]
 
 export function AppLayout() {
@@ -112,6 +121,27 @@ export function AppLayout() {
               onClick={close}
             />
           ))}
+          {user?.role === 'admin' && (
+            <>
+              <Divider my="xs" />
+              <Text size="xs" c="dimmed" fw={700} px="sm">
+                Admin
+              </Text>
+              {adminNavItems.map((item) => (
+                <NavLink
+                  key={item.to}
+                  component={Link}
+                  to={item.to}
+                  label={item.label}
+                  leftSection={<item.icon size={18} />}
+                  active={
+                    location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)
+                  }
+                  onClick={close}
+                />
+              ))}
+            </>
+          )}
         </Stack>
       </AppShell.Navbar>
       <AppShell.Main>

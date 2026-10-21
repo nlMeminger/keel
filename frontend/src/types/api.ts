@@ -62,6 +62,334 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/api/v1/admin/audit-log': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List Audit Log */
+    get: operations['list_audit_log_api_v1_admin_audit_log_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/jobs': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List Jobs */
+    get: operations['list_jobs_api_v1_admin_jobs_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/logs': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List Logs */
+    get: operations['list_logs_api_v1_admin_logs_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/sync/transactions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Sync All Transactions */
+    post: operations['sync_all_transactions_api_v1_admin_sync_transactions_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/sync/balances': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Sync All Balances */
+    post: operations['sync_all_balances_api_v1_admin_sync_balances_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/banks/{bank_id}/health-check': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Health Check Bank */
+    post: operations['health_check_bank_api_v1_admin_banks__bank_id__health_check_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/plaid/reconcile-items': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Reconcile Plaid Items */
+    post: operations['reconcile_plaid_items_api_v1_admin_plaid_reconcile_items_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/config': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get Config */
+    get: operations['get_config_api_v1_admin_config_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/plaid/api-stats': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Api Stats */
+    get: operations['api_stats_api_v1_admin_plaid_api_stats_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/plaid/calls': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List Calls */
+    get: operations['list_calls_api_v1_admin_plaid_calls_get']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/categories/seed': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Seed Categories Route */
+    post: operations['seed_categories_route_api_v1_admin_categories_seed_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/banks/seed': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Seed Institutions Route */
+    post: operations['seed_institutions_route_api_v1_admin_banks_seed_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/api-tokens': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List Api Tokens */
+    get: operations['list_api_tokens_api_v1_admin_api_tokens_get']
+    put?: never
+    /** Create Api Token */
+    post: operations['create_api_token_api_v1_admin_api_tokens_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/api-tokens/{token_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    /** Revoke Api Token */
+    delete: operations['revoke_api_token_api_v1_admin_api_tokens__token_id__delete']
+    options?: never
+    head?: never
+    /** Update Api Token */
+    patch: operations['update_api_token_api_v1_admin_api_tokens__token_id__patch']
+    trace?: never
+  }
+  '/api/v1/admin/users': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** List Users */
+    get: operations['list_users_api_v1_admin_users_get']
+    put?: never
+    /** Create User */
+    post: operations['create_user_api_v1_admin_users_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/users/{user_id}': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** Get User */
+    get: operations['get_user_api_v1_admin_users__user_id__get']
+    put?: never
+    post?: never
+    /** Delete User */
+    delete: operations['delete_user_api_v1_admin_users__user_id__delete']
+    options?: never
+    head?: never
+    /** Update User */
+    patch: operations['update_user_api_v1_admin_users__user_id__patch']
+    trace?: never
+  }
+  '/api/v1/admin/users/{user_id}/reset-password': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Reset Password */
+    post: operations['reset_password_api_v1_admin_users__user_id__reset_password_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/users/{user_id}/revoke-sessions': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** Revoke Sessions */
+    post: operations['revoke_sessions_api_v1_admin_users__user_id__revoke_sessions_post']
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/api/v1/admin/users/{user_id}/plaid-access': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    /** Update Plaid Access */
+    patch: operations['update_plaid_access_api_v1_admin_users__user_id__plaid_access_patch']
+    trace?: never
+  }
   '/api/v1/assets': {
     parameters: {
       query?: never
@@ -1046,6 +1374,233 @@ export interface components {
         [key: string]: unknown
       } | null
     }
+    /** AdminApiTokenCreateRequest */
+    AdminApiTokenCreateRequest: {
+      /**
+       * User Id
+       * Format: uuid
+       */
+      user_id: string
+      /** Label */
+      label: string
+      /** Scopes */
+      scopes: ('read' | 'write')[]
+      /** Expires At */
+      expires_at?: string | null
+    }
+    /** AdminApiTokenCreateResponseData */
+    AdminApiTokenCreateResponseData: {
+      token: components['schemas']['AdminApiTokenPublic']
+      /** Secret */
+      secret: string
+    }
+    /** AdminApiTokenPublic */
+    AdminApiTokenPublic: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /**
+       * User Id
+       * Format: uuid
+       */
+      user_id: string
+      /** Label */
+      label: string
+      /** Scopes */
+      scopes: string[]
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+      /** Last Used At */
+      last_used_at: string | null
+      /** Expires At */
+      expires_at: string | null
+      /** Revoked At */
+      revoked_at: string | null
+    }
+    /** AdminApiTokenUpdateRequest */
+    AdminApiTokenUpdateRequest: {
+      /** Label */
+      label?: string | null
+      /** Expires At */
+      expires_at?: string | null
+    }
+    /**
+     * AdminAuditLogPublic
+     * @description GET /admin/audit-log (API_SPEC.md §18). Built via `from_log`, not `from_attributes`
+     *     — the ORM attribute is `metadata_`, since `metadata` collides with SQLAlchemy's own
+     *     `Base.metadata` (see app.admin.models.AdminAuditLog).
+     */
+    AdminAuditLogPublic: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /**
+       * Admin User Id
+       * Format: uuid
+       */
+      admin_user_id: string
+      /** Action */
+      action: string
+      /** Target Type */
+      target_type: string
+      /** Target Id */
+      target_id: string | null
+      /** Metadata */
+      metadata: {
+        [key: string]: unknown
+      }
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+    }
+    /** AdminConfigResponseData */
+    AdminConfigResponseData: {
+      /** Environment */
+      environment: string
+      /** Cors Origins */
+      cors_origins: string[]
+      /** Beat Schedule */
+      beat_schedule: components['schemas']['BeatScheduleEntry'][]
+    }
+    /**
+     * AdminJobPublic
+     * @description GET /admin/jobs (API_SPEC.md §18) — same Job row JobStatus (app.sync.schemas)
+     *     renders for a per-user poll, plus `owner_id` since this view spans every user.
+     */
+    AdminJobPublic: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /** Type */
+      type: string
+      /** Status */
+      status: string
+      /** Owner Id */
+      owner_id: string | null
+      progress: components['schemas']['JobProgress'] | null
+      /** Result */
+      result: {
+        [key: string]: unknown
+      } | null
+      /** Error */
+      error: string | null
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+      /** Started At */
+      started_at: string | null
+      /** Finished At */
+      finished_at: string | null
+    }
+    /** AdminPlaidAccessUpdateRequest */
+    AdminPlaidAccessUpdateRequest: {
+      /** Enabled */
+      enabled: boolean
+      /** Monthly Call Limit */
+      monthly_call_limit?: number | null
+    }
+    /** AdminResetPasswordRequest */
+    AdminResetPasswordRequest: {
+      /** Password */
+      password?: string | null
+    }
+    /** AdminResetPasswordResponseData */
+    AdminResetPasswordResponseData: {
+      /** Temporary Password */
+      temporary_password: string | null
+    }
+    /** AdminUserCreateRequest */
+    AdminUserCreateRequest: {
+      /**
+       * Email
+       * Format: email
+       */
+      email: string
+      /** Name */
+      name: string
+      /**
+       * Role
+       * @default user
+       * @enum {string}
+       */
+      role: 'user' | 'admin'
+      /** Password */
+      password?: string | null
+    }
+    /** AdminUserCreateResponseData */
+    AdminUserCreateResponseData: {
+      user: components['schemas']['AdminUserPublic']
+      /** Initial Password */
+      initial_password: string
+    }
+    /** AdminUserDeleteRequest */
+    AdminUserDeleteRequest: {
+      /** Confirm */
+      confirm: boolean
+    }
+    /**
+     * AdminUserPublic
+     * @description Account metadata only (API_SPEC.md §18) — never a user's transactions/balances/other
+     *     financial data, which stays outside the admin surface entirely (CLAUDE.md Don't-do-this).
+     */
+    AdminUserPublic: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /** Email */
+      email: string
+      /** Name */
+      name: string
+      /** Role */
+      role: string
+      /** Status */
+      status: string
+      /** Plaid Enabled */
+      plaid_enabled: boolean
+      /** Plaid Monthly Call Limit */
+      plaid_monthly_call_limit: number | null
+      /** Plaid Calls This Month */
+      plaid_calls_this_month: number
+      /** Must Change Password */
+      must_change_password: boolean
+      /** Linked Bank Count */
+      linked_bank_count: number
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+      /** Last Login At */
+      last_login_at: string | null
+    }
+    /** AdminUserUpdateRequest */
+    AdminUserUpdateRequest: {
+      /** Name */
+      name?: string | null
+      /** Email */
+      email?: string | null
+      /** Timezone */
+      timezone?: string | null
+      /** Role */
+      role?: ('user' | 'admin') | null
+      /** Status */
+      status?: ('active' | 'suspended') | null
+    }
     /** AssetCreateRequest */
     AssetCreateRequest: {
       /** Name */
@@ -1088,6 +1643,16 @@ export interface components {
       /** Current Value */
       current_value?: number | string | null
     }
+    /** BankHealthCheckResponseData */
+    BankHealthCheckResponseData: {
+      /**
+       * Bank Id
+       * Format: uuid
+       */
+      bank_id: string
+      /** Health */
+      health: string
+    }
     /**
      * BankPublic
      * @description Bank + the subset of its PlaidItem fields safe to expose — access_token/cursor/item_id
@@ -1122,6 +1687,13 @@ export interface components {
        * Format: uuid
        */
       job_id: string
+    }
+    /** BeatScheduleEntry */
+    BeatScheduleEntry: {
+      /** Task */
+      task: string
+      /** Schedule Seconds */
+      schedule_seconds: number
     }
     /** BudgetCreateRequest */
     BudgetCreateRequest: {
@@ -1195,6 +1767,11 @@ export interface components {
       inflow: string
       /** Outflow */
       outflow: string
+    }
+    /** CategoriesSeedResponseData */
+    CategoriesSeedResponseData: {
+      /** Created */
+      created: number
     }
     /** CategoryCreateRequest */
     CategoryCreateRequest: {
@@ -1423,9 +2000,37 @@ export interface components {
     Envelope_AccountPublic_: {
       data: components['schemas']['AccountPublic']
     }
+    /** Envelope[AdminApiTokenCreateResponseData] */
+    Envelope_AdminApiTokenCreateResponseData_: {
+      data: components['schemas']['AdminApiTokenCreateResponseData']
+    }
+    /** Envelope[AdminApiTokenPublic] */
+    Envelope_AdminApiTokenPublic_: {
+      data: components['schemas']['AdminApiTokenPublic']
+    }
+    /** Envelope[AdminConfigResponseData] */
+    Envelope_AdminConfigResponseData_: {
+      data: components['schemas']['AdminConfigResponseData']
+    }
+    /** Envelope[AdminResetPasswordResponseData] */
+    Envelope_AdminResetPasswordResponseData_: {
+      data: components['schemas']['AdminResetPasswordResponseData']
+    }
+    /** Envelope[AdminUserCreateResponseData] */
+    Envelope_AdminUserCreateResponseData_: {
+      data: components['schemas']['AdminUserCreateResponseData']
+    }
+    /** Envelope[AdminUserPublic] */
+    Envelope_AdminUserPublic_: {
+      data: components['schemas']['AdminUserPublic']
+    }
     /** Envelope[AssetPublic] */
     Envelope_AssetPublic_: {
       data: components['schemas']['AssetPublic']
+    }
+    /** Envelope[BankHealthCheckResponseData] */
+    Envelope_BankHealthCheckResponseData_: {
+      data: components['schemas']['BankHealthCheckResponseData']
     }
     /** Envelope[BankPublic] */
     Envelope_BankPublic_: {
@@ -1438,6 +2043,10 @@ export interface components {
     /** Envelope[BudgetPublic] */
     Envelope_BudgetPublic_: {
       data: components['schemas']['BudgetPublic']
+    }
+    /** Envelope[CategoriesSeedResponseData] */
+    Envelope_CategoriesSeedResponseData_: {
+      data: components['schemas']['CategoriesSeedResponseData']
     }
     /** Envelope[CategoryPublic] */
     Envelope_CategoryPublic_: {
@@ -1458,6 +2067,10 @@ export interface components {
     /** Envelope[HoldingPublic] */
     Envelope_HoldingPublic_: {
       data: components['schemas']['HoldingPublic']
+    }
+    /** Envelope[InstitutionsSeedResponseData] */
+    Envelope_InstitutionsSeedResponseData_: {
+      data: components['schemas']['InstitutionsSeedResponseData']
     }
     /** Envelope[JobStatus] */
     Envelope_JobStatus_: {
@@ -1494,6 +2107,10 @@ export interface components {
     /** Envelope[SuccessResponse] */
     Envelope_SuccessResponse_: {
       data: components['schemas']['SuccessResponse']
+    }
+    /** Envelope[SyncAllTriggerResponseData] */
+    Envelope_SyncAllTriggerResponseData_: {
+      data: components['schemas']['SyncAllTriggerResponseData']
     }
     /** Envelope[SyncTriggerResponse] */
     Envelope_SyncTriggerResponse_: {
@@ -1622,6 +2239,13 @@ export interface components {
       /** Current Value */
       current_value?: number | string | null
     }
+    /** InstitutionsSeedResponseData */
+    InstitutionsSeedResponseData: {
+      /** Created */
+      created: number
+      /** Updated */
+      updated: number
+    }
     /** JobProgress */
     JobProgress: {
       /** Current */
@@ -1665,6 +2289,25 @@ export interface components {
        * Format: uuid
        */
       bank_id: string
+    }
+    /** LogEntryPublic */
+    LogEntryPublic: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /** Level */
+      level: string
+      /** Logger Name */
+      logger_name: string
+      /** Message */
+      message: string
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
     }
     /** LoginRequest */
     LoginRequest: {
@@ -1841,6 +2484,30 @@ export interface components {
       /** Read */
       read: boolean
     }
+    /** Page[AdminApiTokenPublic] */
+    Page_AdminApiTokenPublic_: {
+      /** Data */
+      data: components['schemas']['AdminApiTokenPublic'][]
+      pagination: components['schemas']['PaginationMeta']
+    }
+    /** Page[AdminAuditLogPublic] */
+    Page_AdminAuditLogPublic_: {
+      /** Data */
+      data: components['schemas']['AdminAuditLogPublic'][]
+      pagination: components['schemas']['PaginationMeta']
+    }
+    /** Page[AdminJobPublic] */
+    Page_AdminJobPublic_: {
+      /** Data */
+      data: components['schemas']['AdminJobPublic'][]
+      pagination: components['schemas']['PaginationMeta']
+    }
+    /** Page[AdminUserPublic] */
+    Page_AdminUserPublic_: {
+      /** Data */
+      data: components['schemas']['AdminUserPublic'][]
+      pagination: components['schemas']['PaginationMeta']
+    }
     /** Page[CashFlowPoint] */
     Page_CashFlowPoint_: {
       /** Data */
@@ -1853,10 +2520,28 @@ export interface components {
       data: components['schemas']['HoldingPerformance'][]
       pagination: components['schemas']['PaginationMeta']
     }
+    /** Page[LogEntryPublic] */
+    Page_LogEntryPublic_: {
+      /** Data */
+      data: components['schemas']['LogEntryPublic'][]
+      pagination: components['schemas']['PaginationMeta']
+    }
     /** Page[NetWorthHistoryPoint] */
     Page_NetWorthHistoryPoint_: {
       /** Data */
       data: components['schemas']['NetWorthHistoryPoint'][]
+      pagination: components['schemas']['PaginationMeta']
+    }
+    /** Page[PlaidApiCallPublic] */
+    Page_PlaidApiCallPublic_: {
+      /** Data */
+      data: components['schemas']['PlaidApiCallPublic'][]
+      pagination: components['schemas']['PaginationMeta']
+    }
+    /** Page[PlaidApiStatRow] */
+    Page_PlaidApiStatRow_: {
+      /** Data */
+      data: components['schemas']['PlaidApiStatRow'][]
       pagination: components['schemas']['PaginationMeta']
     }
     /** Page[SpendingByCategoryRow] */
@@ -1875,6 +2560,41 @@ export interface components {
       total_count: number
       /** Total Pages */
       total_pages: number
+    }
+    /** PlaidApiCallPublic */
+    PlaidApiCallPublic: {
+      /**
+       * Id
+       * Format: uuid
+       */
+      id: string
+      /**
+       * User Id
+       * Format: uuid
+       */
+      user_id: string
+      /** Endpoint */
+      endpoint: string
+      /** Status */
+      status: string
+      /** Error Code */
+      error_code: string | null
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string
+    }
+    /**
+     * PlaidApiStatRow
+     * @description One aggregated row from GET /admin/plaid/api-stats — `group` is the stringified
+     *     group key: a user id, an endpoint name, or a "YYYY-MM" month, depending on `group_by`.
+     */
+    PlaidApiStatRow: {
+      /** Group */
+      group: string
+      /** Count */
+      count: number
     }
     /** RecurringTransactionCreateRequest */
     RecurringTransactionCreateRequest: {
@@ -2038,6 +2758,14 @@ export interface components {
        * @default true
        */
       success: boolean
+    }
+    /** SyncAllTriggerResponseData */
+    SyncAllTriggerResponseData: {
+      /**
+       * Job Id
+       * Format: uuid
+       */
+      job_id: string
     }
     /** SyncTriggerRequest */
     SyncTriggerRequest: {
@@ -2398,6 +3126,727 @@ export interface operations {
           'application/json': {
             [key: string]: unknown
           }
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_audit_log_api_v1_admin_audit_log_get: {
+    parameters: {
+      query?: {
+        admin_user_id?: string | null
+        action?: string | null
+        date_from?: string | null
+        date_to?: string | null
+        page?: number
+        page_size?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Page_AdminAuditLogPublic_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_jobs_api_v1_admin_jobs_get: {
+    parameters: {
+      query?: {
+        type?: string | null
+        status?: string | null
+        page?: number
+        page_size?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Page_AdminJobPublic_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_logs_api_v1_admin_logs_get: {
+    parameters: {
+      query?: {
+        level?: string | null
+        date_from?: string | null
+        date_to?: string | null
+        page?: number
+        page_size?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Page_LogEntryPublic_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  sync_all_transactions_api_v1_admin_sync_transactions_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Envelope_SyncAllTriggerResponseData_']
+        }
+      }
+    }
+  }
+  sync_all_balances_api_v1_admin_sync_balances_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Envelope_SyncAllTriggerResponseData_']
+        }
+      }
+    }
+  }
+  health_check_bank_api_v1_admin_banks__bank_id__health_check_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        bank_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Envelope_BankHealthCheckResponseData_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  reconcile_plaid_items_api_v1_admin_plaid_reconcile_items_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      202: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Envelope_SyncAllTriggerResponseData_']
+        }
+      }
+    }
+  }
+  get_config_api_v1_admin_config_get: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Envelope_AdminConfigResponseData_']
+        }
+      }
+    }
+  }
+  api_stats_api_v1_admin_plaid_api_stats_get: {
+    parameters: {
+      query: {
+        group_by: 'user' | 'endpoint' | 'month'
+        user_id?: string | null
+        date_from?: string | null
+        date_to?: string | null
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Page_PlaidApiStatRow_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_calls_api_v1_admin_plaid_calls_get: {
+    parameters: {
+      query?: {
+        user_id?: string | null
+        endpoint?: string | null
+        status?: string | null
+        date_from?: string | null
+        date_to?: string | null
+        page?: number
+        page_size?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Page_PlaidApiCallPublic_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  seed_categories_route_api_v1_admin_categories_seed_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Envelope_CategoriesSeedResponseData_']
+        }
+      }
+    }
+  }
+  seed_institutions_route_api_v1_admin_banks_seed_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Envelope_InstitutionsSeedResponseData_']
+        }
+      }
+    }
+  }
+  list_api_tokens_api_v1_admin_api_tokens_get: {
+    parameters: {
+      query?: {
+        page?: number
+        page_size?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Page_AdminApiTokenPublic_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  create_api_token_api_v1_admin_api_tokens_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdminApiTokenCreateRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Envelope_AdminApiTokenCreateResponseData_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  revoke_api_token_api_v1_admin_api_tokens__token_id__delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        token_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  update_api_token_api_v1_admin_api_tokens__token_id__patch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        token_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdminApiTokenUpdateRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Envelope_AdminApiTokenPublic_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  list_users_api_v1_admin_users_get: {
+    parameters: {
+      query?: {
+        role?: string | null
+        status?: string | null
+        page?: number
+        page_size?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Page_AdminUserPublic_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  create_user_api_v1_admin_users_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdminUserCreateRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Envelope_AdminUserCreateResponseData_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  get_user_api_v1_admin_users__user_id__get: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        user_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Envelope_AdminUserPublic_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  delete_user_api_v1_admin_users__user_id__delete: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        user_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdminUserDeleteRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  update_user_api_v1_admin_users__user_id__patch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        user_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdminUserUpdateRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Envelope_AdminUserPublic_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  reset_password_api_v1_admin_users__user_id__reset_password_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        user_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdminResetPasswordRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Envelope_AdminResetPasswordResponseData_']
+        }
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  revoke_sessions_api_v1_admin_users__user_id__revoke_sessions_post: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        user_id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['HTTPValidationError']
+        }
+      }
+    }
+  }
+  update_plaid_access_api_v1_admin_users__user_id__plaid_access_patch: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        user_id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        'application/json': components['schemas']['AdminPlaidAccessUpdateRequest']
+      }
+    }
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          'application/json': components['schemas']['Envelope_AdminUserPublic_']
         }
       }
       /** @description Validation Error */
