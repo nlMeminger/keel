@@ -144,3 +144,48 @@ def full_bank_sync(db: DbSession, user: User, bank: Bank, item: PlaidItem) -> di
     accounts_synced = len(banks_service.pull_accounts_and_holdings(db, user, bank, item))
     transaction_result = sync_transactions_for_bank(db, user, bank, item)
     return {"accounts_synced": accounts_synced, **transaction_result}
+
+
+def _active_banks_with_owners(db: DbSession) -> list[tuple[Bank, PlaidItem, User]]:
+    """Every non-removed bank in the system, across every user — the scope Celery beat's
+    scheduled sync runs over (API_SPEC.md §16), as opposed to one user's own banks."""
+    rows = []
+    for bank in db.scalars(select(Bank)):
+        item = db.get(PlaidItem, bank.plaid_item_id)
+        assert item is not None
+        if item.removed_at is not None:
+            continue
+        owner = db.get(User, bank.owner_id)
+        assert owner is not None
+        rows.append((bank, item, owner))
+    return rows
+
+
+def sync_all_banks_transactions(db: DbSession) -> dict[str, int]:
+    """Celery beat's scheduled `sync_transactions` run (API_SPEC.md §16) — every bank in the
+    system, skipping (not erroring on) any owner with Plaid access disabled, so one
+    admin-disabled user never blocks the scheduled run for everyone else."""
+    totals = {"added": 0, "modified": 0, "removed": 0, "skipped_disabled": 0}
+    for bank, item, owner in _active_banks_with_owners(db):
+        if not owner.plaid_enabled:
+            totals["skipped_disabled"] += 1
+            continue
+        result = sync_transactions_for_bank(db, owner, bank, item)
+        for key in ("added", "modified", "removed"):
+            totals[key] += result[key]
+    return totals
+
+
+def sync_all_banks_balances(db: DbSession) -> dict[str, int]:
+    """Celery beat's scheduled `update_balances` run (API_SPEC.md §16) — same system-wide
+    scope and disabled-owner skip as sync_all_banks_transactions above."""
+    accounts_synced = 0
+    skipped_disabled = 0
+    for bank, item, owner in _active_banks_with_owners(db):
+        if not owner.plaid_enabled:
+            skipped_disabled += 1
+            continue
+        accounts_synced += len(banks_service.pull_accounts_and_holdings(db, owner, bank, item))
+        bank.last_synced_at = datetime.now(UTC)
+        db.commit()
+    return {"accounts_synced": accounts_synced, "skipped_disabled": skipped_disabled}

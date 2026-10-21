@@ -9,9 +9,12 @@ import pytest
 from fastapi.testclient import TestClient
 from plaid.model.products import Products
 from plaid.model.sandbox_public_token_create_request import SandboxPublicTokenCreateRequest
+from sqlalchemy.orm import Session as OrmSession
 
+from app.auth.models import User
 from app.config import settings
 from app.core.plaid_client import get_plaid_client
+from app.sync.tasks import scheduled_sync_balances_task, scheduled_sync_transactions_task
 
 SANDBOX_INSTITUTION_ID = "ins_109508"
 
@@ -97,3 +100,39 @@ def test_sync_bank_is_idempotent_on_repeat_runs(
     )
 
     assert second_count == first_count
+
+
+@requires_sandbox
+def test_scheduled_sync_covers_every_users_banks_and_skips_disabled_ones(
+    client: TestClient,
+    register_and_login: Callable[[str], tuple[str, uuid.UUID]],
+    db: OrmSession,
+) -> None:
+    token_a, _user_a = register_and_login("scheduled-sync-a@example.com")
+    token_b, user_b = register_and_login("scheduled-sync-b@example.com")
+    token_c, user_c = register_and_login("scheduled-sync-c@example.com")
+
+    bank_a = _link_sandbox_bank(client, token_a)
+    bank_b = _link_sandbox_bank(client, token_b)
+    bank_c = _link_sandbox_bank(client, token_c)
+
+    # User C has Plaid access disabled after linking — the scheduled run must skip their
+    # bank entirely rather than erroring the whole batch (CLAUDE.md plaid_enabled rule).
+    disabled_user = db.get(User, user_c)
+    assert disabled_user is not None
+    disabled_user.plaid_enabled = False
+    db.commit()
+
+    result = scheduled_sync_transactions_task.delay()
+    assert result.get(timeout=30) is None
+    result = scheduled_sync_balances_task.delay()
+    assert result.get(timeout=30) is None
+
+    for token, bank in [(token_a, bank_a), (token_b, bank_b)]:
+        headers = {"Authorization": f"Bearer {token}"}
+        bank_detail = client.get(f"/api/v1/banks/{bank['id']}", headers=headers).json()["data"]
+        assert bank_detail["last_synced_at"] is not None
+
+    headers_c = {"Authorization": f"Bearer {token_c}"}
+    bank_c_detail = client.get(f"/api/v1/banks/{bank_c['id']}", headers=headers_c).json()["data"]
+    assert bank_c_detail["last_synced_at"] is None

@@ -4,7 +4,7 @@ import app.database as database
 from app.auth.models import User
 from app.banks import service as banks_service
 from app.celery_app import celery_app
-from app.jobs.service import run_job
+from app.jobs.service import create_job, run_job
 from app.sync import service
 
 
@@ -64,3 +64,45 @@ def full_bank_sync_task(job_id: str, user_id: str, bank_id: str) -> None:
             db.close()
 
     run_job(uuid.UUID(job_id), _run, session_factory=database.SessionLocal)
+
+
+@celery_app.task(name="sync.scheduled_transactions")
+def scheduled_sync_transactions_task() -> None:
+    """Celery beat calls this directly, on no particular user's request (API_SPEC.md §16) —
+    every bank in the system, not one user's. Creates its own system Job (owner_id=None,
+    same precedent as an admin-triggered sync-all) so the run is still visible through the
+    job/polling contract."""
+    db = database.SessionLocal()
+    try:
+        job = create_job(db, "transaction_sync", owner_id=None)
+    finally:
+        db.close()
+
+    def _run() -> dict[str, int]:
+        db = database.SessionLocal()
+        try:
+            return service.sync_all_banks_transactions(db)
+        finally:
+            db.close()
+
+    run_job(job.id, _run, session_factory=database.SessionLocal)
+
+
+@celery_app.task(name="sync.scheduled_balances")
+def scheduled_sync_balances_task() -> None:
+    """Celery beat's scheduled `update_balances` run (API_SPEC.md §16) — system-wide, same
+    pattern as scheduled_sync_transactions_task above."""
+    db = database.SessionLocal()
+    try:
+        job = create_job(db, "balance_sync", owner_id=None)
+    finally:
+        db.close()
+
+    def _run() -> dict[str, int]:
+        db = database.SessionLocal()
+        try:
+            return service.sync_all_banks_balances(db)
+        finally:
+            db.close()
+
+    run_job(job.id, _run, session_factory=database.SessionLocal)

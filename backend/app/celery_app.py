@@ -1,3 +1,5 @@
+from datetime import timedelta
+
 from celery import Celery
 
 from app.config import settings
@@ -17,5 +19,18 @@ celery_app.conf.update(
     enable_utc=True,
 )
 
-# Populated as scheduled jobs land (Phase 5+/7): sync_transactions, update_balances, etc.
-celery_app.conf.beat_schedule = {}
+# Plaid webhooks are the primary trigger for real-time updates (SPEC.md §3) — these cover
+# the scheduled/background path for banks that don't fire one. Balances are cheap (one
+# /accounts/get call per bank) so they run hourly; transaction sync is heavier and Plaid's
+# own SYNC_UPDATES_AVAILABLE webhook (7.8) already covers the common case, so every 6 hours
+# is enough of a backstop.
+celery_app.conf.beat_schedule = {
+    "sync-transactions": {
+        "task": "sync.scheduled_transactions",
+        "schedule": timedelta(hours=6),
+    },
+    "sync-balances": {
+        "task": "sync.scheduled_balances",
+        "schedule": timedelta(hours=1),
+    },
+}
