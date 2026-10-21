@@ -35,6 +35,33 @@ class PlaidItem(Base):
     )
 
 
+PLAID_CALL_STATUSES = ("success", "error")
+
+
+class PlaidAPICall(Base):
+    """One row per real Plaid API call made on a user's behalf (API_SPEC.md §18) — what
+    /admin/plaid/api-stats aggregates and /admin/plaid/calls lists raw, and what
+    monthly_call_limit enforcement counts live against. Never written for a sandbox-only
+    simulation call a test makes to set up fixture state (e.g. sandbox/public_token/create)
+    — those don't represent anything the app itself calls in production."""
+
+    __tablename__ = "plaid_api_calls"
+    __table_args__ = (
+        CheckConstraint("status IN ('success','error')", name="ck_plaid_api_calls_status"),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), index=True
+    )
+    endpoint: Mapped[str] = mapped_column(index=True)
+    status: Mapped[str]
+    error_code: Mapped[str | None] = mapped_column(default=None)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), index=True
+    )
+
+
 class Bank(Base):
     """A user's linked bank connection, one-to-one with a PlaidItem (API_SPEC.md §3)."""
 

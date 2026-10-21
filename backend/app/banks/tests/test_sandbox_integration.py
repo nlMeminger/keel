@@ -8,7 +8,10 @@ import pytest
 from fastapi.testclient import TestClient
 from plaid.model.products import Products
 from plaid.model.sandbox_public_token_create_request import SandboxPublicTokenCreateRequest
+from sqlalchemy import select
+from sqlalchemy.orm import Session as OrmSession
 
+from app.banks.models import PlaidAPICall
 from app.config import settings
 from app.core.plaid_client import get_plaid_client
 
@@ -104,3 +107,27 @@ def test_investment_account_holdings_populate_read_only(
         headers=headers,
     )
     assert forbidden.status_code == 403
+
+
+@requires_sandbox
+def test_linking_logs_one_plaid_api_call_row_per_real_call(
+    client: TestClient,
+    register_and_login: Callable[[str], tuple[str, uuid.UUID]],
+    db: OrmSession,
+) -> None:
+    token, user_id = register_and_login("call-log-link@example.com")
+    _link_sandbox_bank(client, token)
+
+    rows = db.scalars(select(PlaidAPICall).where(PlaidAPICall.user_id == user_id)).all()
+    endpoints = {row.endpoint for row in rows}
+    # One row per real call the app itself made — never for sandbox_public_token_create,
+    # which only simulates what the user's browser does in Link, not an app-initiated call.
+    assert {
+        "item_public_token_exchange",
+        "item_get",
+        "institutions_get_by_id",
+        "accounts_get",
+        "investments_holdings_get",
+    } <= endpoints
+    assert all(row.status == "success" for row in rows)
+    assert all(row.user_id == user_id for row in rows)

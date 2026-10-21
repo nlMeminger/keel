@@ -2,8 +2,8 @@ import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
 
-from plaid.exceptions import ApiException
 from plaid.model.transactions_sync_request import TransactionsSyncRequest
+from plaid.model.transactions_sync_response import TransactionsSyncResponse
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
@@ -12,7 +12,7 @@ from app.auth.models import User
 from app.banks import service as banks_service
 from app.banks.models import Bank, PlaidItem
 from app.core.encryption import decrypt
-from app.core.plaid_client import ensure_plaid_enabled, get_plaid_client, plaid_error_to_app_error
+from app.core.plaid_client import ensure_plaid_enabled, get_plaid_client
 from app.transactions.models import Transaction
 from app.transactions.transfer import detect_transfer_candidates
 
@@ -43,15 +43,16 @@ def sync_transactions_for_bank(
     added = modified = removed = 0
     cursor = item.cursor
     while True:
-        try:
-            # The SDK rejects an explicit cursor=None — omit the kwarg entirely on the first
-            # sync for this Item, per Plaid's "omit cursor to retrieve full history" guidance.
-            cursor_kwargs = {"cursor": cursor} if cursor is not None else {}
-            response = client.transactions_sync(
-                TransactionsSyncRequest(access_token=access_token, **cursor_kwargs)
+        # The SDK rejects an explicit cursor=None — omit the kwarg entirely on the first
+        # sync for this Item, per Plaid's "omit cursor to retrieve full history" guidance.
+        cursor_kwargs: dict[str, str] = {"cursor": cursor} if cursor is not None else {}
+
+        def _sync_page(kwargs: dict[str, str] = cursor_kwargs) -> TransactionsSyncResponse:
+            return client.transactions_sync(
+                TransactionsSyncRequest(access_token=access_token, **kwargs)
             )
-        except ApiException as exc:
-            raise plaid_error_to_app_error(exc) from exc
+
+        response = banks_service.call_plaid(db, user.id, "transactions_sync", _sync_page)
 
         for plaid_txn in response.added:
             account = account_map.get(plaid_txn.account_id)

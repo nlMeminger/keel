@@ -1,5 +1,7 @@
 import uuid
+from collections.abc import Callable
 from decimal import Decimal
+from typing import TypeVar
 
 from plaid.api.plaid_api import PlaidApi
 from plaid.exceptions import ApiException
@@ -11,11 +13,36 @@ from sqlalchemy.orm import Session as DbSession
 
 from app.accounts.models import Account
 from app.auth.models import User
-from app.banks.models import Bank, PlaidItem
+from app.banks.models import Bank, PlaidAPICall, PlaidItem
 from app.core.encryption import decrypt, encrypt
 from app.core.errors import AppError
 from app.core.plaid_client import ensure_plaid_enabled, get_plaid_client, plaid_error_to_app_error
 from app.holdings.models import Holding
+
+T = TypeVar("T")
+
+
+def log_plaid_call(
+    db: DbSession, user_id: uuid.UUID, endpoint: str, status: str, error_code: str | None = None
+) -> None:
+    db.add(PlaidAPICall(user_id=user_id, endpoint=endpoint, status=status, error_code=error_code))
+    db.commit()
+
+
+def call_plaid(db: DbSession, user_id: uuid.UUID, endpoint: str, fn: Callable[[], T]) -> T:
+    """Every real Plaid SDK call in the app funnels through this (banks/plaid_link/sync
+    service functions) — logs one PlaidAPICall row per call (API_SPEC.md §18) and
+    translates a raw ApiException into the app's error envelope, so neither concern needs
+    repeating at each of the ~10 call sites. Never used for a sandbox-only test-fixture call
+    (e.g. sandbox/public_token/create) — those aren't calls the app itself makes."""
+    try:
+        result = fn()
+    except ApiException as exc:
+        app_error = plaid_error_to_app_error(exc)
+        log_plaid_call(db, user_id, endpoint, status="error", error_code=app_error.code)
+        raise app_error from exc
+    log_plaid_call(db, user_id, endpoint, status="success")
+    return result
 
 
 def get_bank(db: DbSession, user: User, bank_id: uuid.UUID) -> Bank:
@@ -108,10 +135,12 @@ def pull_accounts_and_holdings(
     ensure_plaid_enabled(user)
     client = get_plaid_client()
     access_token = decrypt(item.access_token)
-    try:
-        plaid_accounts = client.accounts_get(AccountsGetRequest(access_token=access_token)).accounts
-    except ApiException as exc:
-        raise plaid_error_to_app_error(exc) from exc
+    plaid_accounts = call_plaid(
+        db,
+        user.id,
+        "accounts_get",
+        lambda: client.accounts_get(AccountsGetRequest(access_token=access_token)).accounts,
+    )
 
     accounts: list[Account] = []
     for plaid_account in plaid_accounts:
@@ -151,25 +180,28 @@ def pull_accounts_and_holdings(
         a.plaid_account_id: a for a in accounts if a.account_type == "investment"
     }
     if investment_accounts:
-        _pull_holdings(db, client, access_token, investment_accounts)
+        _pull_holdings(db, user, client, access_token, investment_accounts)
 
     return accounts
 
 
 def _pull_holdings(
     db: DbSession,
+    user: User,
     client: PlaidApi,
     access_token: str,
     investment_accounts: dict[str | None, Account],
 ) -> None:
     """Populates `Holding` rows (source='plaid', read-only — see app.holdings.service's
     403-on-Plaid-sourced checks) for every investment account just pulled above."""
-    try:
-        response = client.investments_holdings_get(
+    response = call_plaid(
+        db,
+        user.id,
+        "investments_holdings_get",
+        lambda: client.investments_holdings_get(
             InvestmentsHoldingsGetRequest(access_token=access_token)
-        )
-    except ApiException as exc:
-        raise plaid_error_to_app_error(exc) from exc
+        ),
+    )
 
     securities = {security.security_id: security for security in response.securities}
     for plaid_holding in response.holdings:

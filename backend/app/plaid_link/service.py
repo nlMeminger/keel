@@ -1,7 +1,6 @@
 import uuid
 from datetime import datetime
 
-from plaid.exceptions import ApiException
 from plaid.model.country_code import CountryCode
 from plaid.model.institutions_get_by_id_request import InstitutionsGetByIdRequest
 from plaid.model.item_get_request import ItemGetRequest
@@ -19,7 +18,7 @@ from app.banks.models import Bank, PlaidItem
 from app.config import settings
 from app.core.encryption import decrypt
 from app.core.errors import AppError
-from app.core.plaid_client import ensure_plaid_enabled, get_plaid_client, plaid_error_to_app_error
+from app.core.plaid_client import ensure_plaid_enabled, get_plaid_client
 
 CLIENT_NAME = "Keel"
 LANGUAGE = "en"
@@ -34,7 +33,7 @@ def _webhook_kwargs() -> dict[str, str]:
     return {"webhook": settings.plaid_webhook_url} if settings.plaid_webhook_url else {}
 
 
-def create_link_token_for_new_bank(user: User) -> tuple[str, datetime]:
+def create_link_token_for_new_bank(db: DbSession, user: User) -> tuple[str, datetime]:
     """POST /plaid/link-token (API_SPEC.md §2) — a fresh Link token for adding a new bank."""
     ensure_plaid_enabled(user)
     client = get_plaid_client()
@@ -47,10 +46,9 @@ def create_link_token_for_new_bank(user: User) -> tuple[str, datetime]:
         required_if_supported_products=REQUIRED_IF_SUPPORTED_PRODUCTS,
         **_webhook_kwargs(),
     )
-    try:
-        response = client.link_token_create(request)
-    except ApiException as exc:
-        raise plaid_error_to_app_error(exc) from exc
+    response = banks_service.call_plaid(
+        db, user.id, "link_token_create", lambda: client.link_token_create(request)
+    )
     return response.link_token, response.expiration
 
 
@@ -68,21 +66,25 @@ def create_link_token_for_reauth(
     ensure_plaid_enabled(user)
     _, item = banks_service.get_bank_with_item(db, user, bank_id)
     client = get_plaid_client()
-    try:
-        plaid_user_id = client.user_create(UserCreateRequest(client_user_id=str(user.id))).user_id
-        request = LinkTokenCreateRequest(
-            client_name=CLIENT_NAME,
-            language=LANGUAGE,
-            country_codes=COUNTRY_CODES,
-            user=LinkTokenCreateRequestUser(client_user_id=str(user.id)),
-            user_id=plaid_user_id,
-            access_token=decrypt(item.access_token),
-            update=LinkTokenCreateRequestUpdate(user=True),
-            **_webhook_kwargs(),
-        )
-        response = client.link_token_create(request)
-    except ApiException as exc:
-        raise plaid_error_to_app_error(exc) from exc
+    plaid_user_id = banks_service.call_plaid(
+        db,
+        user.id,
+        "user_create",
+        lambda: client.user_create(UserCreateRequest(client_user_id=str(user.id))).user_id,
+    )
+    request = LinkTokenCreateRequest(
+        client_name=CLIENT_NAME,
+        language=LANGUAGE,
+        country_codes=COUNTRY_CODES,
+        user=LinkTokenCreateRequestUser(client_user_id=str(user.id)),
+        user_id=plaid_user_id,
+        access_token=decrypt(item.access_token),
+        update=LinkTokenCreateRequestUpdate(user=True),
+        **_webhook_kwargs(),
+    )
+    response = banks_service.call_plaid(
+        db, user.id, "link_token_create", lambda: client.link_token_create(request)
+    )
     return response.link_token, response.expiration
 
 
@@ -92,19 +94,35 @@ def exchange_public_token(db: DbSession, user: User, public_token: str) -> tuple
     public_token is single-use; nothing here retries on failure."""
     ensure_plaid_enabled(user)
     client = get_plaid_client()
-    try:
-        exchange = client.item_public_token_exchange(
+    exchange = banks_service.call_plaid(
+        db,
+        user.id,
+        "item_public_token_exchange",
+        lambda: client.item_public_token_exchange(
             ItemPublicTokenExchangeRequest(public_token=public_token)
-        )
-        item_info = client.item_get(ItemGetRequest(access_token=exchange.access_token)).item
-        institution_id = item_info.institution_id
-        if institution_id is None:
-            raise AppError(502, "plaid_error", "Linked item has no associated institution.")
-        institution = client.institutions_get_by_id(
-            InstitutionsGetByIdRequest(institution_id=institution_id, country_codes=COUNTRY_CODES)
-        ).institution
-    except ApiException as exc:
-        raise plaid_error_to_app_error(exc) from exc
+        ),
+    )
+    item_info = banks_service.call_plaid(
+        db,
+        user.id,
+        "item_get",
+        lambda: client.item_get(ItemGetRequest(access_token=exchange.access_token)).item,
+    )
+    institution_id = item_info.institution_id
+    if institution_id is None:
+        raise AppError(502, "plaid_error", "Linked item has no associated institution.")
+    institution = banks_service.call_plaid(
+        db,
+        user.id,
+        "institutions_get_by_id",
+        lambda: (
+            client.institutions_get_by_id(
+                InstitutionsGetByIdRequest(
+                    institution_id=institution_id, country_codes=COUNTRY_CODES
+                )
+            ).institution
+        ),
+    )
 
     bank, created_item = banks_service.create_bank_from_exchange(
         db,

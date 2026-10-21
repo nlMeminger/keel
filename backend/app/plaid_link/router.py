@@ -14,8 +14,10 @@ router = APIRouter(prefix="/plaid", tags=["plaid-link"])
 
 
 @router.post("/link-token", response_model=Envelope[LinkTokenResponse])
-def create_link_token(user: User = Depends(get_current_user)) -> dict[str, LinkTokenResponse]:
-    link_token, expiration = service.create_link_token_for_new_bank(user)
+def create_link_token(
+    db: DbSession = Depends(get_db), user: User = Depends(get_current_user)
+) -> dict[str, LinkTokenResponse]:
+    link_token, expiration = service.create_link_token_for_new_bank(db, user)
     return {"data": LinkTokenResponse(link_token=link_token, expiration=expiration)}
 
 
