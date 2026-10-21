@@ -11,7 +11,9 @@ import {
   Title,
 } from '@mantine/core'
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { ApiError } from '../../lib/api-client'
+import { ACCOUNT_TYPES, DETAIL_FIELDS, type AccountType } from './account-types'
 import {
   type Account,
   type AccountCreateInput,
@@ -21,44 +23,6 @@ import {
   useUpdateAccount,
 } from './api'
 import { HoldingsSection } from './HoldingsSection'
-
-const ACCOUNT_TYPES = [
-  'checking',
-  'savings',
-  'credit_card',
-  'investment',
-  'loan',
-  'mortgage',
-  'student_loan',
-] as const
-
-type AccountType = (typeof ACCOUNT_TYPES)[number]
-
-const DETAIL_FIELDS: Record<AccountType, { key: string; label: string; required?: boolean }[]> = {
-  checking: [{ key: 'overdraft_limit', label: 'Overdraft limit' }],
-  savings: [{ key: 'interest_rate', label: 'Interest rate (%)' }],
-  credit_card: [
-    { key: 'credit_limit', label: 'Credit limit', required: true },
-    { key: 'apr', label: 'APR (%)' },
-  ],
-  investment: [{ key: 'account_subtype', label: 'Subtype (e.g. brokerage, 401k)' }],
-  loan: [
-    { key: 'principal', label: 'Principal', required: true },
-    { key: 'interest_rate', label: 'Interest rate (%)' },
-    { key: 'term_months', label: 'Term (months)' },
-  ],
-  mortgage: [
-    { key: 'principal', label: 'Principal', required: true },
-    { key: 'interest_rate', label: 'Interest rate (%)' },
-    { key: 'term_months', label: 'Term (months)' },
-    { key: 'escrow_balance', label: 'Escrow balance' },
-  ],
-  student_loan: [
-    { key: 'principal', label: 'Principal', required: true },
-    { key: 'interest_rate', label: 'Interest rate (%)' },
-    { key: 'servicer', label: 'Servicer' },
-  ],
-}
 
 function CreateAccountForm() {
   const createAccount = useCreateAccount()
@@ -143,7 +107,7 @@ function CreateAccountForm() {
   )
 }
 
-function AccountRow({ account }: { account: Account }) {
+export function AccountRow({ account }: { account: Account }) {
   const updateAccount = useUpdateAccount()
   const deactivateAccount = useDeactivateAccount()
   const [editing, setEditing] = useState(false)
@@ -178,7 +142,9 @@ function AccountRow({ account }: { account: Account }) {
       ) : (
         <Group justify="space-between">
           <Group gap="xs">
-            <Text fw={500}>{account.name}</Text>
+            <Text component={Link} to={`/accounts/${account.id}`} fw={500}>
+              {account.name}
+            </Text>
             <Badge variant="light">{account.account_type}</Badge>
             <Text c="dimmed">{account.balance}</Text>
             {!account.is_active && (

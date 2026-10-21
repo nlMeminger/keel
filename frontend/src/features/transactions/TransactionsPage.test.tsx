@@ -1,13 +1,18 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
+import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import { renderWithProviders } from '../../test/render'
 import { server } from '../../test/mocks/server'
 import { TransactionsPage } from './TransactionsPage'
 
-function renderTransactionsPage() {
-  return renderWithProviders(<TransactionsPage />)
+function renderTransactionsPage(initialPath = '/transactions') {
+  return renderWithProviders(
+    <MemoryRouter initialEntries={[initialPath]}>
+      <TransactionsPage />
+    </MemoryRouter>,
+  )
 }
 
 function pageOf(items: object[]) {
@@ -148,5 +153,26 @@ describe('TransactionsPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Add transaction' }))
 
     expect(await screen.findByText(/Groceries run/)).toBeInTheDocument()
+  })
+
+  it('pre-filters by account when arriving via a ?account_id= deep link', async () => {
+    let requestedAccountId: string | null = null
+    server.use(
+      http.get('/api/v1/accounts', () => HttpResponse.json(pageOf([account]))),
+      http.get('/api/v1/categories', () => HttpResponse.json(pageOf([groceries]))),
+      http.get('/api/v1/transactions', ({ request }) => {
+        const url = new URL(request.url)
+        if (url.searchParams.get('transfer_status') === 'suggested') {
+          return HttpResponse.json(pageOf([]))
+        }
+        requestedAccountId = url.searchParams.get('account_id')
+        return HttpResponse.json(pageOf([txn]))
+      }),
+    )
+    renderTransactionsPage('/transactions?account_id=a1')
+
+    expect(await screen.findByText(/Groceries run/)).toBeInTheDocument()
+    expect(requestedAccountId).toBe('a1')
+    expect(screen.getByLabelText('Filter by account')).toHaveValue('a1')
   })
 })

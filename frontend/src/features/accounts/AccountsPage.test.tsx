@@ -1,13 +1,18 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
+import { MemoryRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import { renderWithProviders } from '../../test/render'
 import { server } from '../../test/mocks/server'
 import { AccountsPage } from './AccountsPage'
 
 function renderAccountsPage() {
-  return renderWithProviders(<AccountsPage />)
+  return renderWithProviders(
+    <MemoryRouter>
+      <AccountsPage />
+    </MemoryRouter>,
+  )
 }
 
 const baseAccount = {
@@ -35,6 +40,21 @@ describe('AccountsPage', () => {
     renderAccountsPage()
 
     expect(await screen.findByText(/Checking/)).toBeInTheDocument()
+  })
+
+  it("links an account's name to its detail page", async () => {
+    server.use(
+      http.get('/api/v1/accounts', () =>
+        HttpResponse.json({
+          data: [baseAccount],
+          pagination: { page: 1, page_size: 25, total_count: 1, total_pages: 1 },
+        }),
+      ),
+    )
+    renderAccountsPage()
+
+    const link = await screen.findByRole('link', { name: 'Checking' })
+    expect(link).toHaveAttribute('href', '/accounts/a1')
   })
 
   it('creates an account and the list updates without a manual refresh', async () => {

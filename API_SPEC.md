@@ -48,6 +48,8 @@ This `Session` table is also what the admin `revoke-sessions` endpoint (§18) an
 | DELETE | `/banks/{bank_id}` | Unlink a bank — calls Plaid's `item/remove`, then soft-deletes the `Plaid_item` (`removed_at` set, row retained rather than dropped, so a later ghost-item check has something to verify against, see §17/§18) |
 | POST | `/banks/{bank_id}/sync` | Force an immediate sync for this bank — returns `202` + job id (see §16) |
 
+**Frontend**: `/banks` is a top-level nav item (above Accounts — it's connection management, not financial data). It lists every linked `Bank`: institution name, a `health` badge (`healthy`/`needs_reauth`/`error`, see [SPEC.md §5](SPEC.md#5-data-model-notes)), `last_synced_at`, and account count, with per-bank "Sync now" (→ the `POST .../sync` route above, polled via the existing job contract, [§16](#16-sync--background-jobs) — not a new polling mechanism) and "Unlink" actions. Clicking a bank opens `/banks/{bank_id}`: the same header plus the accounts belonging to it (`GET /accounts?bank_id=`, reusing the account-row rendering `/accounts` already has, not a second account UI). Clicking an account there forwards to `/accounts/{account_id}` — a per-account detail route that doesn't exist yet (today's `/accounts` is a single flat list with no per-account URL). Once `Account.bank_id` exists (7.3), each Plaid-linked row on the flat `/accounts` list also carries a small bank-name badge linking back to `/banks/{bank_id}`, so the two pages cross-link both ways. Manual (non-Plaid) accounts never appear on `/banks` — they have no `Bank` to group under, and keep living only on `/accounts`.
+
 ## 4. Accounts
 | Method | Path | Description |
 |---|---|---|

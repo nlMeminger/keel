@@ -11,6 +11,7 @@ import {
   Title,
 } from '@mantine/core'
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useAccounts } from '../accounts/api'
 import { useCategories } from '../categories/api'
 import {
@@ -232,7 +233,11 @@ function TransactionRow({
 export function TransactionsPage() {
   const { data: accounts } = useAccounts({ active: true })
   const { data: categories } = useCategories('all')
-  const [filters, setFilters] = useState<TransactionFilters>({ page: 1 })
+  const [searchParams] = useSearchParams()
+  const [filters, setFilters] = useState<TransactionFilters>({
+    page: 1,
+    account_id: searchParams.get('account_id') ?? undefined,
+  })
 
   const { data, isLoading } = useTransactions(filters)
   const categoryNames = new Map((categories ?? []).map((c) => [c.id, c.primary_category]))

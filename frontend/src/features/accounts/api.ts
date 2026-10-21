@@ -10,10 +10,15 @@ export type Holding = components['schemas']['HoldingPublic']
 export type HoldingCreateInput = components['schemas']['HoldingCreateRequest']
 export type HoldingUpdateInput = components['schemas']['HoldingUpdateRequest']
 
-export function useAccounts(filters: { type?: string; active?: boolean } = {}) {
+export function useAccounts(
+  filters: { type?: string; active?: boolean; bank_id?: string } = {},
+) {
   const params = new URLSearchParams()
   if (filters.type) params.set('type', filters.type)
   if (filters.active !== undefined) params.set('active', String(filters.active))
+  // bank_id isn't implemented server-side until Phase 7.3 (API_SPEC.md §4) — sending it is a
+  // no-op against today's real backend, only the mocked tests for BankDetailPage honor it.
+  if (filters.bank_id) params.set('bank_id', filters.bank_id)
   const query = params.toString()
   return useQuery({
     queryKey: ['accounts', filters],
@@ -21,6 +26,14 @@ export function useAccounts(filters: { type?: string; active?: boolean } = {}) {
       apiFetch<PaginatedResponse<Account>>(`/accounts${query ? `?${query}` : ''}`).then(
         (r) => r.data,
       ),
+  })
+}
+
+export function useAccount(accountId: string) {
+  return useQuery({
+    queryKey: ['accounts', accountId],
+    enabled: accountId !== '',
+    queryFn: () => apiFetch<{ data: Account }>(`/accounts/${accountId}`).then((r) => r.data),
   })
 }
 

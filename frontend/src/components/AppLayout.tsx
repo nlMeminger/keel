@@ -24,12 +24,14 @@ import {
   IconSun,
   IconTags,
   IconTarget,
+  IconWallet,
 } from '@tabler/icons-react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useLogout, useMe } from '../features/auth/api'
 
 const navItems = [
-  { to: '/accounts', label: 'Accounts', icon: IconBuildingBank },
+  { to: '/banks', label: 'Banks', icon: IconBuildingBank },
+  { to: '/accounts', label: 'Accounts', icon: IconWallet },
   { to: '/transactions', label: 'Transactions', icon: IconArrowsLeftRight },
   { to: '/categories', label: 'Categories', icon: IconTags },
   { to: '/merchants', label: 'Merchants', icon: IconBuildingStore },
@@ -96,7 +98,9 @@ export function AppLayout() {
               to={item.to}
               label={item.label}
               leftSection={<item.icon size={18} />}
-              active={location.pathname === item.to}
+              active={
+                location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)
+              }
               onClick={close}
             />
           ))}

@@ -6,6 +6,7 @@ Sequencing and dependencies for building what [SPEC.md](SPEC.md) and [API_SPEC.m
 - **Depends on** = a hard, code-level prerequisite. The item literally cannot be built (or tested) before that one exists.
 - **Blocked by** = an external resource or open decision — not code, something that has to happen or be decided outside this repo.
 - **Success** = a concrete, checkable condition — something you can verify is true or false, not a vibe. If an item's success criterion can't be checked by running something (a test, a request, a query), it isn't specific enough.
+- **Failure** (where present) = the explicit error/edge-case handling the item must cover — what happens on bad input, a missing/foreign id, or an upstream failure — checked the same way as Success (a test or request you can actually run), not just "don't crash."
 - Phase numbers are the recommended build order, not a strict wall: two items with no dependency on each other can be built in parallel or swapped, and it's called out below where that's true.
 - Each phase also has **exit criteria** — the integration-level check that the phase as a whole is done, beyond its individual items.
 
@@ -218,6 +219,10 @@ Goal: bank-linked accounts work end to end, as an addition to the manual-first c
 - **7.11 — Ghost-item detection** (webhook-side check + scheduled `reconcile_removed_plaid_items` job).
   - Depends on: 7.8, 7.10
   - Success: a webhook received for an item with `removed_at` already set produces an ERROR-level log entry visible via `/admin/logs`; running the reconciliation job against a genuinely-removed sandbox item confirms Plaid also reports it gone (no alert), and against an item still active despite `removed_at` being set (simulate by skipping the real `item/remove` call in a test) produces the same alert.
+- **7.12 — Frontend Banks list & detail pages** (`/banks`, `/banks/:bankId`, `/accounts/:accountId`, cross-links back from `/accounts` — see [API_SPEC.md §3](API_SPEC.md#3-banks-linked-connections)).
+  - Depends on: 4.1, 7.3
+  - Success: `/banks` renders one row per linked `Bank` with the correct `health` badge, `last_synced_at`, and account count sourced from `GET /banks`; clicking a bank navigates to `/banks/:bankId` and shows exactly the accounts whose `bank_id` matches (`GET /accounts?bank_id=`); clicking an account forwards to `/accounts/:accountId` showing the same data as its row on the flat `/accounts` list; clicking "Sync now" returns a job id and the bank's `last_synced_at` updates once the job completes, with no manual page refresh.
+  - Failure: a bank with `health` of `needs_reauth` or `error` renders visibly distinct from `healthy` (not a silently identical row) and names the needed action, rather than failing silently; `/banks/:bankId` or `/accounts/:accountId` for an id that doesn't belong to the current user, or doesn't exist, renders a not-found state and never another user's data — covered by an authorization test per [CLAUDE.md](CLAUDE.md)'s "every write route gets an authorization test," extended here since these are new owner-scoped read routes; unlinking a bank that still has accounts removes it from `/banks` and those accounts show as unlinked/inactive on `/accounts` rather than silently keeping a dangling `bank_id`; a failed "Sync now" (job errors, or Plaid reports the item revoked) surfaces an error state on the bank card instead of a spinner that never resolves.
 
 **Exit:** linking a real sandbox bank produces real accounts/transactions in the same screens Phase 4 built, with scheduled sync running in the background, and unlinking it leaves no active item behind on Plaid's side.
 

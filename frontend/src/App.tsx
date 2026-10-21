@@ -2,9 +2,12 @@ import { Stack, Text, Title } from '@mantine/core'
 import { Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { AccountDetailPage } from './features/accounts/AccountDetailPage'
 import { AccountsPage } from './features/accounts/AccountsPage'
 import { AssetsPage } from './features/assets/AssetsPage'
 import { useMe } from './features/auth/api'
+import { BankDetailPage } from './features/banks/BankDetailPage'
+import { BanksPage } from './features/banks/BanksPage'
 import { BudgetsPage } from './features/budgets/BudgetsPage'
 import { CategoriesPage } from './features/categories/CategoriesPage'
 import { GoalsPage } from './features/goals/GoalsPage'
@@ -33,7 +36,10 @@ function App() {
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
           <Route path="/" element={<Home />} />
+          <Route path="/banks" element={<BanksPage />} />
+          <Route path="/banks/:bankId" element={<BankDetailPage />} />
           <Route path="/accounts" element={<AccountsPage />} />
+          <Route path="/accounts/:accountId" element={<AccountDetailPage />} />
           <Route path="/assets" element={<AssetsPage />} />
           <Route path="/budgets" element={<BudgetsPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
