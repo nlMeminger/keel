@@ -5,7 +5,7 @@ from typing import Any
 from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session as DbSession
 
-from app.admin.models import ApiToken, LogEntry
+from app.admin.models import AdminAuditLog, ApiToken, LogEntry
 from app.admin.schemas import (
     AdminConfigResponseData,
     AdminUserPublic,
@@ -352,3 +352,21 @@ def revoke_api_token(db: DbSession, token: ApiToken) -> None:
     if token.revoked_at is None:
         token.revoked_at = datetime.now(UTC)
         db.commit()
+
+
+def list_audit_log_stmt(
+    admin_user_id: uuid.UUID | None,
+    action: str | None,
+    date_from: datetime | None,
+    date_to: datetime | None,
+) -> Select[AdminAuditLog]:
+    stmt = select(AdminAuditLog).order_by(AdminAuditLog.created_at.desc())
+    if admin_user_id is not None:
+        stmt = stmt.where(AdminAuditLog.admin_user_id == admin_user_id)
+    if action is not None:
+        stmt = stmt.where(AdminAuditLog.action == action)
+    if date_from is not None:
+        stmt = stmt.where(AdminAuditLog.created_at >= date_from)
+    if date_to is not None:
+        stmt = stmt.where(AdminAuditLog.created_at <= date_to)
+    return stmt

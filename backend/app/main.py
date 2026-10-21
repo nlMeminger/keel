@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.accounts.router import router as accounts_router
+from app.admin.audit_router import router as admin_audit_router
 from app.admin.log_capture import install_log_capture
 from app.admin.operations_router import router as admin_operations_router
 from app.admin.plaid_stats_router import router as admin_plaid_stats_router
@@ -42,6 +43,7 @@ register_error_handlers(app)
 install_log_capture()
 
 app.include_router(accounts_router, prefix="/api/v1")
+app.include_router(admin_audit_router, prefix="/api/v1")
 app.include_router(admin_operations_router, prefix="/api/v1")
 app.include_router(admin_plaid_stats_router, prefix="/api/v1")
 app.include_router(admin_tokens_router, prefix="/api/v1")

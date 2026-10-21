@@ -4,6 +4,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
+from app.admin.models import AdminAuditLog
 from app.jobs.models import Job
 from app.sync.schemas import JobProgress
 
@@ -194,3 +195,29 @@ class AdminApiTokenPublic(BaseModel):
 class AdminApiTokenCreateResponseData(BaseModel):
     token: AdminApiTokenPublic
     secret: str
+
+
+class AdminAuditLogPublic(BaseModel):
+    """GET /admin/audit-log (API_SPEC.md §18). Built via `from_log`, not `from_attributes`
+    — the ORM attribute is `metadata_`, since `metadata` collides with SQLAlchemy's own
+    `Base.metadata` (see app.admin.models.AdminAuditLog)."""
+
+    id: uuid.UUID
+    admin_user_id: uuid.UUID
+    action: str
+    target_type: str
+    target_id: uuid.UUID | None
+    metadata: dict[str, Any]
+    created_at: datetime
+
+    @classmethod
+    def from_log(cls, log: AdminAuditLog) -> "AdminAuditLogPublic":
+        return cls(
+            id=log.id,
+            admin_user_id=log.admin_user_id,
+            action=log.action,
+            target_type=log.target_type,
+            target_id=log.target_id,
+            metadata=log.metadata_,
+            created_at=log.created_at,
+        )

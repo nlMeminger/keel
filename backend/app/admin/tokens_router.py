@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session as DbSession
 
 from app.admin import service
+from app.admin.audit import record_audit_log
 from app.admin.dependencies import require_admin
 from app.admin.schemas import (
     AdminApiTokenCreateRequest,
@@ -46,6 +47,14 @@ def create_api_token(
     token, secret = service.create_api_token(
         db, admin, body.user_id, body.label, list(body.scopes), body.expires_at
     )
+    record_audit_log(
+        db,
+        admin,
+        "api_token.create",
+        "api_token",
+        token.id,
+        {"user_id": str(body.user_id), "label": body.label, "scopes": body.scopes},
+    )
     return {
         "data": AdminApiTokenCreateResponseData(
             token=AdminApiTokenPublic.model_validate(token), secret=secret
@@ -58,16 +67,20 @@ def update_api_token(
     token_id: uuid.UUID,
     body: AdminApiTokenUpdateRequest,
     db: DbSession = Depends(get_db),
-    _admin: User = Depends(require_admin),
+    admin: User = Depends(require_admin),
 ) -> dict[str, AdminApiTokenPublic]:
     token = service.get_api_token(db, token_id)
     updated = service.update_api_token(db, token, body.label, body.expires_at)
+    record_audit_log(
+        db, admin, "api_token.update", "api_token", token_id, body.model_dump(exclude_none=True)
+    )
     return {"data": AdminApiTokenPublic.model_validate(updated)}
 
 
 @router.delete("/{token_id}", status_code=status.HTTP_204_NO_CONTENT)
 def revoke_api_token(
-    token_id: uuid.UUID, db: DbSession = Depends(get_db), _admin: User = Depends(require_admin)
+    token_id: uuid.UUID, db: DbSession = Depends(get_db), admin: User = Depends(require_admin)
 ) -> None:
     token = service.get_api_token(db, token_id)
     service.revoke_api_token(db, token)
+    record_audit_log(db, admin, "api_token.revoke", "api_token", token_id)
