@@ -141,3 +141,8 @@ Before calling any task finished:
 ## Working process
 - If anything in the specs is ambiguous, underspecified, or turns out to be wrong once you're implementing it, stop and ask rather than guessing and moving on.
 - Update [SPEC.md](SPEC.md)/[API_SPEC.md](API_SPEC.md) if implementation reveals the design needs to change — the specs should stay accurate, not go stale the moment code starts.
+
+## Task visibility — non-negotiable
+- Any request with more than one step gets a tracked task list (the task-tracking tool), created before work starts — not retrofitted after the fact, and not skipped because the work "looks small" if it turns out to have multiple steps.
+- Keep it current in real time: mark each item completed the moment it's done, not in a batch at the end. Add items if scope grows mid-task instead of letting new work go untracked.
+- Show the full list and every item's status (pending/in-progress/completed) — not just whichever one is currently active — at the start of multi-step work, after any status change worth flagging, and whenever asked what's being worked on. Silently grinding through steps with no visible list is the failure mode this rule exists to prevent.
