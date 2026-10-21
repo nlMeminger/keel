@@ -37,7 +37,12 @@ export function AccountDetailPage() {
                 deactivated
               </Badge>
             )}
-            {account.is_plaid_linked && (
+            {account.is_plaid_linked && account.bank_id && (
+              <Badge component={Link} to={`/banks/${account.bank_id}`} color="teal" variant="light">
+                bank-linked
+              </Badge>
+            )}
+            {account.is_plaid_linked && !account.bank_id && (
               <Badge color="teal" variant="light">
                 bank-linked
               </Badge>

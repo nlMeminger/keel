@@ -47,6 +47,34 @@ describe('AccountDetailPage', () => {
     expect(link).toHaveAttribute('href', '/transactions?account_id=a1')
   })
 
+  it('links a bank-linked account back to its bank', async () => {
+    server.use(
+      http.get('/api/v1/accounts/a1', () =>
+        HttpResponse.json({
+          data: { ...creditCard, is_plaid_linked: true, bank_id: 'bank-1' },
+        }),
+      ),
+    )
+    renderAccountDetailPage()
+
+    const link = await screen.findByRole('link', { name: 'bank-linked' })
+    expect(link).toHaveAttribute('href', '/banks/bank-1')
+  })
+
+  it('shows an unlinked bank-linked badge (no link) for an account whose bank was unlinked', async () => {
+    server.use(
+      http.get('/api/v1/accounts/a1', () =>
+        HttpResponse.json({
+          data: { ...creditCard, is_plaid_linked: true, bank_id: null },
+        }),
+      ),
+    )
+    renderAccountDetailPage()
+
+    expect(await screen.findByText('bank-linked')).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'bank-linked' })).not.toBeInTheDocument()
+  })
+
   it("shows a not-found state for an id that doesn't belong to the user (or doesn't exist)", async () => {
     server.use(
       http.get('/api/v1/accounts/a1', () =>
