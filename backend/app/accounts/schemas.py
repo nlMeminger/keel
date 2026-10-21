@@ -96,5 +96,6 @@ class AccountPublic(BaseModel):
     detail: dict[str, object]
     is_active: bool
     is_plaid_linked: bool
+    bank_id: uuid.UUID | None
     created_at: datetime
     updated_at: datetime

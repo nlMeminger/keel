@@ -21,10 +21,13 @@ def list_accounts(
     active: bool | None = Query(default=None),
     pagination: PaginationParams = Depends(pagination_params),
     account_type: str | None = Query(default=None, alias="type"),
+    bank_id: uuid.UUID | None = Query(default=None),
     db: DbSession = Depends(get_db),
     user: User = Depends(get_current_user),
 ) -> dict[str, object]:
-    stmt = service.list_accounts_stmt(user, account_type=account_type, active=active)
+    stmt = service.list_accounts_stmt(
+        user, account_type=account_type, active=active, bank_id=bank_id
+    )
     rows, meta = paginate(db, stmt, pagination.page, pagination.page_size)
     return {
         "data": [AccountPublic.model_validate(row) for row in rows],

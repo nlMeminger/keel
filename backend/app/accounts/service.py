@@ -37,11 +37,16 @@ def get_account(db: DbSession, user: User, account_id: uuid.UUID) -> Account:
 
 
 def list_accounts_stmt(
-    user: User, account_type: str | None, active: bool | None
+    user: User,
+    account_type: str | None,
+    active: bool | None,
+    bank_id: uuid.UUID | None = None,
 ) -> Select[Account]:
     stmt = select(Account).where(Account.user_id == user.id)
     if account_type is not None:
         stmt = stmt.where(Account.account_type == account_type)
+    if bank_id is not None:
+        stmt = stmt.where(Account.bank_id == bank_id)
     if active is not None:
         stmt = stmt.where(Account.is_active == active)
     else:

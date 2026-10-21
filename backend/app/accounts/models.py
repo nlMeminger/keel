@@ -48,6 +48,15 @@ class Account(Base):
     # Always False in Phase 4 — no code path sets it. Phase 7 flips it True at real Plaid-link
     # time; Holding's 403-on-Plaid-linked-account check (4.14) needs this flag to exist now.
     is_plaid_linked: Mapped[bool] = mapped_column(default=False, server_default="false")
+    # Null for manual accounts, set for every Plaid-pulled one (SPEC.md §5). ON DELETE SET
+    # NULL rather than CASCADE: unlinking a bank (7.10) retires its accounts, it never
+    # deletes their transaction history.
+    bank_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("banks.id", ondelete="SET NULL"), index=True, default=None
+    )
+    # Plaid's own per-account identifier — the stable key re-sync upserts against, since an
+    # account's name/mask can change but this can't. Null for manual accounts.
+    plaid_account_id: Mapped[str | None] = mapped_column(unique=True, index=True, default=None)
 
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
