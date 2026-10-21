@@ -54,7 +54,7 @@ backend/
 │   ├── sync/                      # §16 — /sync/transactions, /sync/balances, tasks.py
 │   ├── webhooks/                  # §17
 │   └── admin/                     # §18 — split into sub-routers
-│       ├── dependencies.py  models.py (AdminAuditLog, ApiToken)  audit.py
+│       ├── dependencies.py  models.py (LogEntry, AdminAuditLog, ApiToken)  audit.py  log_capture.py
 │       └── users_router.py  operations_router.py  plaid_stats_router.py
 │           tokens_router.py  seed_router.py  audit_router.py
 ├── scripts/bootstrap_admin.py     # first-admin CLI (ROADMAP 2.5)

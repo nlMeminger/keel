@@ -1,16 +1,25 @@
 import uuid
+from datetime import datetime
 
 from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session as DbSession
 
-from app.admin.schemas import AdminUserPublic
+from app.admin.models import LogEntry
+from app.admin.schemas import AdminConfigResponseData, AdminUserPublic, BeatScheduleEntry
 from app.auth.models import User
 from app.auth.service import revoke_other_sessions
+from app.banks import service as banks_service
 from app.banks.models import Bank, PlaidItem
 from app.banks.service import remove_plaid_item
+from app.banks.tasks import reconcile_removed_plaid_items_task
+from app.celery_app import celery_app
+from app.config import settings
 from app.core.errors import AppError
 from app.core.plaid_client import calls_this_month
 from app.core.security import generate_opaque_token, hash_password
+from app.jobs.models import Job
+from app.jobs.service import create_job
+from app.sync.tasks import scheduled_sync_balances_task, scheduled_sync_transactions_task
 
 
 def list_users_stmt(role: str | None, status: str | None) -> Select[User]:
@@ -159,3 +168,68 @@ def delete_user(db: DbSession, user: User, confirm: bool) -> None:
 
     db.delete(user)
     db.commit()
+
+
+def list_jobs_stmt(job_type: str | None, status: str | None) -> Select[Job]:
+    stmt = select(Job).order_by(Job.created_at.desc())
+    if job_type is not None:
+        stmt = stmt.where(Job.type == job_type)
+    if status is not None:
+        stmt = stmt.where(Job.status == status)
+    return stmt
+
+
+def list_logs_stmt(
+    level: str | None, date_from: datetime | None, date_to: datetime | None
+) -> Select[LogEntry]:
+    stmt = select(LogEntry).order_by(LogEntry.created_at.desc())
+    if level is not None:
+        stmt = stmt.where(LogEntry.level == level.upper())
+    if date_from is not None:
+        stmt = stmt.where(LogEntry.created_at >= date_from)
+    if date_to is not None:
+        stmt = stmt.where(LogEntry.created_at <= date_to)
+    return stmt
+
+
+def trigger_sync_all_transactions(db: DbSession) -> Job:
+    """POST /admin/sync/transactions (API_SPEC.md §18) — force-triggers the same system-wide
+    sync Celery beat runs on a schedule, distinct from a user's own per-bank/per-user
+    `/sync/transactions` (§16). Creates the Job here so the response carries an id to poll
+    immediately; scheduled_sync_transactions_task reuses the same body either way."""
+    job = create_job(db, "transaction_sync", owner_id=None)
+    scheduled_sync_transactions_task.delay(job_id=str(job.id))
+    return job
+
+
+def trigger_sync_all_balances(db: DbSession) -> Job:
+    job = create_job(db, "balance_sync", owner_id=None)
+    scheduled_sync_balances_task.delay(job_id=str(job.id))
+    return job
+
+
+def trigger_reconcile_items(db: DbSession) -> Job:
+    job = create_job(db, "plaid_item_reconciliation", owner_id=None)
+    reconcile_removed_plaid_items_task.delay(job_id=str(job.id))
+    return job
+
+
+def check_bank_health(db: DbSession, bank_id: uuid.UUID) -> tuple[uuid.UUID, str]:
+    bank, item = banks_service.get_bank_any_owner(db, bank_id)
+    health = banks_service.check_bank_health(db, bank, item)
+    return bank.id, health
+
+
+def get_config() -> AdminConfigResponseData:
+    """GET /admin/config (API_SPEC.md §18) — non-secret operational config only. Infra
+    secrets (DB password, Plaid secret, JWT signing key) are never read from `settings`
+    here, by construction — this function doesn't import anything that would expose them."""
+    beat_schedule = [
+        BeatScheduleEntry(task=entry["task"], schedule_seconds=entry["schedule"].total_seconds())
+        for entry in celery_app.conf.beat_schedule.values()
+    ]
+    return AdminConfigResponseData(
+        environment=settings.environment,
+        cors_origins=settings.cors_origins,
+        beat_schedule=beat_schedule,
+    )

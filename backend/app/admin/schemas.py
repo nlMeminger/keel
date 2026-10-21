@@ -1,8 +1,11 @@
 import uuid
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
+from app.jobs.models import Job
+from app.sync.schemas import JobProgress
 
 UserRole = Literal["user", "admin"]
 UserStatus = Literal["active", "suspended"]
@@ -65,3 +68,67 @@ class AdminPlaidAccessUpdateRequest(BaseModel):
 
 class AdminUserDeleteRequest(BaseModel):
     confirm: bool
+
+
+class AdminJobPublic(BaseModel):
+    """GET /admin/jobs (API_SPEC.md §18) — same Job row JobStatus (app.sync.schemas)
+    renders for a per-user poll, plus `owner_id` since this view spans every user."""
+
+    id: uuid.UUID
+    type: str
+    status: str
+    owner_id: uuid.UUID | None
+    progress: JobProgress | None
+    result: dict[str, Any] | None
+    error: str | None
+    created_at: datetime
+    started_at: datetime | None
+    finished_at: datetime | None
+
+    @classmethod
+    def from_job(cls, job: Job) -> "AdminJobPublic":
+        progress = None
+        if job.progress_current is not None and job.progress_total is not None:
+            progress = JobProgress(current=job.progress_current, total=job.progress_total)
+        return cls(
+            id=job.id,
+            type=job.type,
+            status=job.status,
+            owner_id=job.owner_id,
+            progress=progress,
+            result=job.result,
+            error=job.error,
+            created_at=job.created_at,
+            started_at=job.started_at,
+            finished_at=job.finished_at,
+        )
+
+
+class LogEntryPublic(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    level: str
+    logger_name: str
+    message: str
+    created_at: datetime
+
+
+class SyncAllTriggerResponseData(BaseModel):
+    job_id: uuid.UUID
+
+
+class BankHealthCheckResponseData(BaseModel):
+    bank_id: uuid.UUID
+    health: str
+
+
+class BeatScheduleEntry(BaseModel):
+    task: str
+    schedule_seconds: float
+
+
+class AdminConfigResponseData(BaseModel):
+    environment: str
+    cors_origins: list[str]
+    beat_schedule: list[BeatScheduleEntry]

@@ -4,6 +4,7 @@ import app.database as database
 from app.auth.models import User
 from app.banks import service as banks_service
 from app.celery_app import celery_app
+from app.jobs.models import Job
 from app.jobs.service import create_job, run_job
 from app.sync import service
 
@@ -67,14 +68,18 @@ def full_bank_sync_task(job_id: str, user_id: str, bank_id: str) -> None:
 
 
 @celery_app.task(name="sync.scheduled_transactions")
-def scheduled_sync_transactions_task() -> None:
-    """Celery beat calls this directly, on no particular user's request (API_SPEC.md §16) —
-    every bank in the system, not one user's. Creates its own system Job (owner_id=None,
-    same precedent as an admin-triggered sync-all) so the run is still visible through the
-    job/polling contract."""
+def scheduled_sync_transactions_task(job_id: str | None = None) -> None:
+    """System-wide sync, not one user's — Celery beat calls this with no `job_id`
+    (API_SPEC.md §16) and it creates its own system Job (owner_id=None); an admin's manual
+    `POST /admin/sync/transactions` (§18) creates the Job itself first and passes the id, so
+    both paths share one task body instead of near-duplicate ones."""
     db = database.SessionLocal()
     try:
-        job = create_job(db, "transaction_sync", owner_id=None)
+        if job_id is not None:
+            job = db.get(Job, uuid.UUID(job_id))
+            assert job is not None
+        else:
+            job = create_job(db, "transaction_sync", owner_id=None)
     finally:
         db.close()
 
@@ -89,12 +94,16 @@ def scheduled_sync_transactions_task() -> None:
 
 
 @celery_app.task(name="sync.scheduled_balances")
-def scheduled_sync_balances_task() -> None:
+def scheduled_sync_balances_task(job_id: str | None = None) -> None:
     """Celery beat's scheduled `update_balances` run (API_SPEC.md §16) — system-wide, same
-    pattern as scheduled_sync_transactions_task above."""
+    shared-task-body pattern as scheduled_sync_transactions_task above."""
     db = database.SessionLocal()
     try:
-        job = create_job(db, "balance_sync", owner_id=None)
+        if job_id is not None:
+            job = db.get(Job, uuid.UUID(job_id))
+            assert job is not None
+        else:
+            job = create_job(db, "balance_sync", owner_id=None)
     finally:
         db.close()
 

@@ -326,3 +326,39 @@ def reconcile_removed_plaid_items(db: DbSession) -> dict[str, int]:
             "Plaid still reports removed item %s (db id %s) as active", item.item_id, item.id
         )
     return {"checked": len(items), "ghost_items": ghost_item_count}
+
+
+def get_bank_any_owner(db: DbSession, bank_id: uuid.UUID) -> tuple[Bank, PlaidItem]:
+    """Admin lookup with no ownership scoping (API_SPEC.md §18's `/admin/banks/{id}/*`
+    routes check health regardless of owner) — never used by a per-user route."""
+    bank = db.get(Bank, bank_id)
+    if bank is None:
+        raise AppError(404, "not_found", "Bank not found.")
+    item = db.get(PlaidItem, bank.plaid_item_id)
+    assert item is not None
+    return bank, item
+
+
+def check_bank_health(db: DbSession, bank: Bank, item: PlaidItem) -> str:
+    """`POST /admin/banks/{bank_id}/health-check` (API_SPEC.md §18) — an admin's on-demand
+    poll of Plaid's own item status, same interpretation of `item.error` as the webhook
+    ITEM/ERROR handler (app.webhooks.service.handle_webhook) uses, just pulled instead of
+    pushed. Not gated on ensure_plaid_enabled/plaid_enabled — an admin must be able to check
+    a bank's health even for a user whose Plaid access they've already disabled."""
+    client = get_plaid_client()
+    access_token = decrypt(item.access_token)
+    response = call_plaid(
+        db,
+        bank.owner_id,
+        "item_get",
+        lambda: client.item_get(ItemGetRequest(access_token=access_token)),
+    )
+    error = response.item.error
+    if error is None:
+        bank.health = "healthy"
+    elif error.error_code == "ITEM_LOGIN_REQUIRED":
+        bank.health = "needs_reauth"
+    else:
+        bank.health = "error"
+    db.commit()
+    return bank.health
