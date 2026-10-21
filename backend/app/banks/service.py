@@ -1,5 +1,6 @@
 import uuid
 from collections.abc import Callable
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import TypeVar
 
@@ -8,7 +9,8 @@ from plaid.exceptions import ApiException
 from plaid.model.account_base import AccountBase
 from plaid.model.accounts_get_request import AccountsGetRequest
 from plaid.model.investments_holdings_get_request import InvestmentsHoldingsGetRequest
-from sqlalchemy import func, select
+from plaid.model.item_remove_request import ItemRemoveRequest
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session as DbSession
 
 from app.accounts.models import Account
@@ -246,4 +248,36 @@ def _pull_holdings(
                     source="plaid",
                 )
             )
+    db.commit()
+
+
+def unlink_bank(db: DbSession, user: User, bank_id: uuid.UUID) -> None:
+    """DELETE /banks/{bank_id} (API_SPEC.md §3) — calls Plaid's item/remove, then hard-
+    deletes the Bank row while retaining the PlaidItem (removed_at set), so the ghost-item
+    check (7.11) has something to verify against. The bank's own accounts never keep a
+    dangling bank_id (ON DELETE SET NULL) and are explicitly deactivated rather than left
+    looking like live manual accounts.
+
+    Idempotent on removed_at: calling Plaid's item/remove twice on the same access_token is
+    a real error on Plaid's side (ITEM_NOT_FOUND) — skipping the call once already removed
+    avoids ever hitting that, covering a retried request that raced ahead of the first
+    attempt's commit.
+    """
+    bank, item = get_bank_with_item(db, user, bank_id)
+    ensure_plaid_enabled(user)
+
+    if item.removed_at is None:
+        access_token = decrypt(item.access_token)
+        client = get_plaid_client()
+        call_plaid(
+            db,
+            user.id,
+            "item_remove",
+            lambda: client.item_remove(ItemRemoveRequest(access_token=access_token)),
+        )
+        item.removed_at = datetime.now(UTC)
+        db.commit()
+
+    db.execute(update(Account).where(Account.bank_id == bank.id).values(is_active=False))
+    db.delete(bank)
     db.commit()
