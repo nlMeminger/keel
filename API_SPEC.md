@@ -177,12 +177,12 @@ Needed because the app must run fully without any Plaid connection — manual ac
 ## 15. Dashboard & Reports
 | Method | Path | Description |
 |---|---|---|
-| GET | `/dashboard/summary` | Net worth (+ delta vs. last period), this-month inflow/outflow, recent transactions (capped, e.g. 10), budget status, latest credit score + trend — all at a glance. Must return something sensible with zero Plaid connections (manual-only data) |
-| GET | `/accounts/{account_id}/balance-history` | Convenience read over `/metrics?type=account_balance&account_id=...` for charting one account |
-| GET | `/reports/net-worth-history` | Net worth over time, reconstructed from every account's *and* every asset's value-history entries (manual or Plaid-sourced — same `Metrics` table either way). `granularity=day\|week\|month` (default `day`) rolls up server-side to the last value per period |
-| GET | `/reports/cash-flow` | Inflow/outflow over time, by period. Excludes any transaction with `is_transfer=true` |
-| GET | `/reports/spending-by-category` | Category breakdown over any date range. Excludes any transaction with `is_transfer=true` |
-| GET | `/reports/credit-health` | Credit utilization (computed from credit accounts) **and** credit-score history (from `/metrics?type=credit_score`) together, since they're normally read as one picture. Same `granularity` param as net-worth-history |
+| GET | `/dashboard/summary` | Net worth (+ delta vs. last period), this-month inflow/outflow, recent transactions (capped, e.g. 10), budget status, latest credit score + trend — all at a glance. Must return something sensible with zero Plaid connections (manual-only data). "Delta vs. last period" compares against net worth at the end of last calendar month (via `/reports/net-worth-history` logic); a brand-new account/asset that predates any Metric simply counts as 0 for that prior point, same no-retroactive-backfill rule net-worth-history follows |
+| GET | `/accounts/{account_id}/balance-history` | Convenience read over `/metrics?type=account_balance&account_id=...` for charting one account. Optional `date_from`/`date_to`, unbounded if omitted |
+| GET | `/reports/net-worth-history` | Net worth over time, reconstructed from every account's *and* every asset's value-history entries (manual or Plaid-sourced — same `Metrics` table either way). `granularity=day\|week\|month` (default `day`) rolls up server-side to the last value per period. Optional `date_from`/`date_to`; `date_to` defaults to today, `date_from` defaults to the earliest relevant `Metrics` entry the user has (today if none yet) |
+| GET | `/reports/cash-flow` | Inflow/outflow over time, by period (`granularity` as above, default `day`). Excludes any transaction with `is_transfer=true`. Optional `date_from`/`date_to`; both default to the current calendar month |
+| GET | `/reports/spending-by-category` | Category breakdown over any date range. Excludes any transaction with `is_transfer=true`. Optional `date_from`/`date_to`; both default to the current calendar month |
+| GET | `/reports/credit-health` | Credit utilization (computed from credit accounts) **and** credit-score history (from `/metrics?type=credit_score`) together, since they're normally read as one picture. Same `granularity`/`date_from`/`date_to` defaults as net-worth-history. `overall_utilization` is `null` (not `0`) when the user has no credit_card accounts yet, so the frontend can tell "no data" apart from "no usage" |
 | GET | `/reports/investments` | Per-holding performance (quantity, cost basis, current value, gain/loss), aggregated across Plaid-sourced and manually-entered holdings alike — see `Holding` in §4 |
 
 ## 16. Sync & Background Jobs
