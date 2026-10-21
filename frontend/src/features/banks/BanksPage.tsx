@@ -1,6 +1,7 @@
 import { Badge, Button, Group, Paper, Stack, Text, Title } from '@mantine/core'
 import { Link } from 'react-router-dom'
 import { type Bank, type BankHealth, useBankSync, useBanks, useUnlinkBank } from './api'
+import { LinkBankButton } from './LinkBankButton'
 
 const HEALTH_COLOR: Record<BankHealth, string> = {
   healthy: 'teal',
@@ -62,7 +63,10 @@ export function BanksPage() {
 
   return (
     <Stack>
-      <Title order={1}>Banks</Title>
+      <Group justify="space-between">
+        <Title order={1}>Banks</Title>
+        <LinkBankButton />
+      </Group>
       {isLoading ? (
         <Text>Loading banks…</Text>
       ) : isError ? (

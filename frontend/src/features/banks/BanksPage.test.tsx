@@ -2,12 +2,25 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { http, HttpResponse } from 'msw'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { renderWithProviders } from '../../test/render'
 import { server } from '../../test/mocks/server'
 import type { Bank } from './api'
 import { BankDetailPage } from './BankDetailPage'
 import { BanksPage } from './BanksPage'
+
+// react-plaid-link loads Plaid's own embed script and iframe — nothing jsdom can run, and
+// no network call MSW could intercept at the API boundary. Stubbed here, driven through its
+// onSuccess callback to simulate a user completing Plaid's real Link UI; every actual
+// backend call it triggers (link-token, exchange-token) still goes through MSW below.
+let capturedOnSuccess: ((publicToken: string) => void) | null = null
+const openLinkMock = vi.fn()
+vi.mock('react-plaid-link', () => ({
+  usePlaidLink: (opts: { token: string; onSuccess: (publicToken: string) => void }) => {
+    capturedOnSuccess = opts.onSuccess
+    return { open: openLinkMock, ready: opts.token !== '' }
+  },
+}))
 
 function renderBanksPage() {
   return renderWithProviders(
@@ -96,9 +109,7 @@ describe('BanksPage', () => {
   it('unlinking a bank removes it from the list', async () => {
     let unlinked = false
     server.use(
-      http.get('/api/v1/banks', () =>
-        HttpResponse.json(banksResponse(unlinked ? [] : [chase])),
-      ),
+      http.get('/api/v1/banks', () => HttpResponse.json(banksResponse(unlinked ? [] : [chase]))),
       http.delete('/api/v1/banks/b1', () => {
         unlinked = true
         return new HttpResponse(null, { status: 204 })
@@ -112,91 +123,122 @@ describe('BanksPage', () => {
     await waitFor(() => expect(screen.queryByText('Chase')).not.toBeInTheDocument())
   })
 
-  it(
-    'syncing a bank polls the job to completion and refreshes the last-synced time',
-    async () => {
-      let jobCallCount = 0
-      let synced = false
-      server.use(
-        http.get('/api/v1/banks', () =>
-          HttpResponse.json(
-            banksResponse([
-              { ...chase, last_synced_at: synced ? '2026-02-01T00:00:00Z' : null },
-            ]),
-          ),
+  it('syncing a bank polls the job to completion and refreshes the last-synced time', async () => {
+    let jobCallCount = 0
+    let synced = false
+    server.use(
+      http.get('/api/v1/banks', () =>
+        HttpResponse.json(
+          banksResponse([{ ...chase, last_synced_at: synced ? '2026-02-01T00:00:00Z' : null }]),
         ),
-        http.post('/api/v1/banks/b1/sync', () =>
-          HttpResponse.json({ data: { id: 'job-1' } }, { status: 202 }),
-        ),
-        http.get('/api/v1/sync/jobs/job-1', () => {
-          jobCallCount += 1
-          if (jobCallCount < 2) {
-            return HttpResponse.json({
-              data: {
-                id: 'job-1',
-                type: 'balance_sync',
-                status: 'running',
-                progress: null,
-                started_at: '2026-02-01T00:00:00Z',
-                finished_at: null,
-                error: null,
-              },
-            })
-          }
-          synced = true
+      ),
+      http.post('/api/v1/banks/b1/sync', () =>
+        HttpResponse.json({ data: { id: 'job-1' } }, { status: 202 }),
+      ),
+      http.get('/api/v1/sync/jobs/job-1', () => {
+        jobCallCount += 1
+        if (jobCallCount < 2) {
           return HttpResponse.json({
             data: {
               id: 'job-1',
               type: 'balance_sync',
-              status: 'succeeded',
+              status: 'running',
               progress: null,
               started_at: '2026-02-01T00:00:00Z',
-              finished_at: '2026-02-01T00:00:05Z',
+              finished_at: null,
               error: null,
             },
           })
+        }
+        synced = true
+        return HttpResponse.json({
+          data: {
+            id: 'job-1',
+            type: 'balance_sync',
+            status: 'succeeded',
+            progress: null,
+            started_at: '2026-02-01T00:00:00Z',
+            finished_at: '2026-02-01T00:00:05Z',
+            error: null,
+          },
+        })
+      }),
+    )
+    renderBanksPage()
+
+    expect(await screen.findByText(/never synced/)).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Sync now' }))
+
+    await waitFor(() => expect(screen.getByText(/last synced/)).toBeInTheDocument(), {
+      timeout: 4_000,
+    })
+  }, 8_000)
+
+  it('a failed sync surfaces an error instead of a spinner that never resolves', async () => {
+    server.use(
+      http.get('/api/v1/banks', () => HttpResponse.json(banksResponse([chase]))),
+      http.post('/api/v1/banks/b1/sync', () =>
+        HttpResponse.json({ data: { id: 'job-2' } }, { status: 202 }),
+      ),
+      http.get('/api/v1/sync/jobs/job-2', () =>
+        HttpResponse.json({
+          data: {
+            id: 'job-2',
+            type: 'balance_sync',
+            status: 'failed',
+            progress: null,
+            started_at: '2026-02-01T00:00:00Z',
+            finished_at: '2026-02-01T00:00:05Z',
+            error: 'Plaid item revoked.',
+          },
         }),
-      )
-      renderBanksPage()
+      ),
+    )
+    renderBanksPage()
 
-      expect(await screen.findByText(/never synced/)).toBeInTheDocument()
-      await userEvent.click(screen.getByRole('button', { name: 'Sync now' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Sync now' }))
 
-      await waitFor(() => expect(screen.getByText(/last synced/)).toBeInTheDocument(), {
-        timeout: 4_000,
-      })
-    },
-    8_000,
-  )
+    expect(await screen.findByText('Plaid item revoked.')).toBeInTheDocument()
+  }, 8_000)
 
-  it(
-    'a failed sync surfaces an error instead of a spinner that never resolves',
-    async () => {
-      server.use(
-        http.get('/api/v1/banks', () => HttpResponse.json(banksResponse([chase]))),
-        http.post('/api/v1/banks/b1/sync', () =>
-          HttpResponse.json({ data: { id: 'job-2' } }, { status: 202 }),
-        ),
-        http.get('/api/v1/sync/jobs/job-2', () =>
-          HttpResponse.json({
-            data: {
-              id: 'job-2',
-              type: 'balance_sync',
-              status: 'failed',
-              progress: null,
-              started_at: '2026-02-01T00:00:00Z',
-              finished_at: '2026-02-01T00:00:05Z',
-              error: 'Plaid item revoked.',
-            },
-          }),
-        ),
-      )
-      renderBanksPage()
+  it('linking a bank fetches a Link token, opens Plaid Link, and shows the new bank on success', async () => {
+    let linked = false
+    server.use(
+      http.get('/api/v1/banks', () => HttpResponse.json(banksResponse(linked ? [chase] : []))),
+      http.post('/api/v1/plaid/link-token', () =>
+        HttpResponse.json({
+          data: { link_token: 'link-sandbox-abc', expiration: '2026-01-01T00:00:00Z' },
+        }),
+      ),
+      http.post('/api/v1/plaid/exchange-token', async ({ request }) => {
+        const body = (await request.json()) as { public_token: string }
+        expect(body.public_token).toBe('public-sandbox-xyz')
+        linked = true
+        return HttpResponse.json({ data: chase })
+      }),
+    )
+    renderBanksPage()
 
-      await userEvent.click(await screen.findByRole('button', { name: 'Sync now' }))
+    expect(await screen.findByText('No banks linked yet.')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Link a bank' }))
 
-      expect(await screen.findByText('Plaid item revoked.')).toBeInTheDocument()
-    },
-    8_000,
-  )
+    await waitFor(() => expect(openLinkMock).toHaveBeenCalled())
+    capturedOnSuccess?.('public-sandbox-xyz')
+
+    expect(await screen.findByText('Chase')).toBeInTheDocument()
+  })
+
+  it('shows an error if starting the Link flow fails', async () => {
+    server.use(
+      http.get('/api/v1/banks', () => HttpResponse.json(banksResponse([]))),
+      http.post('/api/v1/plaid/link-token', () =>
+        HttpResponse.json({ error: { code: 'plaid_disabled', message: 'x' } }, { status: 403 }),
+      ),
+    )
+    renderBanksPage()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Link a bank' }))
+
+    expect(await screen.findByText('Failed to start linking a bank.')).toBeInTheDocument()
+  })
 })

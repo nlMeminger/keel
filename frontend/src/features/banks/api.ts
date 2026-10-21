@@ -3,6 +3,9 @@ import { useEffect, useState } from 'react'
 import { apiFetch } from '../../lib/api-client'
 import { useJobPolling } from '../../hooks/use-job-polling'
 import type { PaginatedResponse } from '../../lib/pagination'
+import type { components } from '../../types/api'
+
+export type LinkTokenResponse = components['schemas']['LinkTokenResponse']
 
 // Hand-written, not generated from types/api.ts: the backend has no /banks routes yet
 // (ROADMAP.md Phase 7.1-7.3). Swap these for `components['schemas'][...]` once those land
@@ -41,6 +44,32 @@ export function useSyncBank() {
   })
 }
 
+/** Fetches a Link token for adding a new bank (API_SPEC.md §2) — the frontend's own
+ * client_id/secret-free step before handing off to Plaid's Link UI. */
+export function useCreateLinkToken() {
+  return useMutation({
+    mutationFn: () =>
+      apiFetch<{ data: LinkTokenResponse }>('/plaid/link-token', { method: 'POST' }).then(
+        (r) => r.data,
+      ),
+  })
+}
+
+/** Exchanges Link's public_token for a real bank connection (API_SPEC.md §2) — on success
+ * the new Bank (with its initial accounts/holdings already pulled) exists server-side, so
+ * this just needs to invalidate the banks list for it to show up. */
+export function useExchangeToken() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (publicToken: string) =>
+      apiFetch<{ data: Bank }>('/plaid/exchange-token', {
+        method: 'POST',
+        body: JSON.stringify({ public_token: publicToken }),
+      }).then((r) => r.data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['banks'] }),
+  })
+}
+
 export function useUnlinkBank() {
   const queryClient = useQueryClient()
   return useMutation({
@@ -66,7 +95,8 @@ export function useBankSync(bankId: string) {
     }
   }, [job.data?.status, queryClient])
 
-  const isPolling = jobId !== null && job.data?.status !== 'succeeded' && job.data?.status !== 'failed'
+  const isPolling =
+    jobId !== null && job.data?.status !== 'succeeded' && job.data?.status !== 'failed'
 
   return {
     sync: () => syncBank.mutate(bankId, { onSuccess: (data) => setJobId(data.id) }),
