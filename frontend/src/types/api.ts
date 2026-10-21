@@ -41,6 +41,27 @@ export interface paths {
         patch: operations["update_account_api_v1_accounts__account_id__patch"];
         trace?: never;
     };
+    "/api/v1/accounts/{account_id}/balance-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Account Balance History
+         * @description Convenience read over `/metrics?type=account_balance&account_id=...` for charting one
+         *     account (API_SPEC.md §15) — same ownership check as every other /accounts/{id} route.
+         */
+        get: operations["account_balance_history_api_v1_accounts__account_id__balance_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/assets": {
         parameters: {
             query?: never;
@@ -340,6 +361,23 @@ export interface paths {
         patch: operations["update_rule_api_v1_category_rules__rule_id__patch"];
         trace?: never;
     };
+    "/api/v1/dashboard/summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Summary */
+        get: operations["get_summary_api_v1_dashboard_summary_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/goals": {
         parameters: {
             query?: never;
@@ -606,6 +644,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/reports/net-worth-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Net Worth History */
+        get: operations["net_worth_history_api_v1_reports_net_worth_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/cash-flow": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Cash Flow */
+        get: operations["cash_flow_api_v1_reports_cash_flow_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/spending-by-category": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Spending By Category */
+        get: operations["spending_by_category_api_v1_reports_spending_by_category_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/credit-health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Credit Health */
+        get: operations["credit_health_api_v1_reports_credit_health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/reports/investments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Investments */
+        get: operations["investments_api_v1_reports_investments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/sync/jobs/{job_id}": {
         parameters: {
             query?: never;
@@ -850,6 +973,23 @@ export interface components {
             /** Start Date */
             start_date?: string | null;
         };
+        /** CashFlowPoint */
+        CashFlowPoint: {
+            /**
+             * Period Start
+             * Format: date
+             */
+            period_start: string;
+            /**
+             * Period End
+             * Format: date
+             */
+            period_end: string;
+            /** Inflow */
+            inflow: string;
+            /** Outflow */
+            outflow: string;
+        };
         /** CategoryCreateRequest */
         CategoryCreateRequest: {
             /** Primary Category */
@@ -1006,6 +1146,69 @@ export interface components {
             /** Color */
             color?: string | null;
         };
+        /** CreditCardUtilization */
+        CreditCardUtilization: {
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Name */
+            name: string;
+            /** Balance */
+            balance: string;
+            /** Credit Limit */
+            credit_limit: string;
+            /** Utilization */
+            utilization: string;
+        };
+        /** CreditHealthResponse */
+        CreditHealthResponse: {
+            /** Accounts */
+            accounts: components["schemas"]["CreditCardUtilization"][];
+            /** Overall Utilization */
+            overall_utilization: string | null;
+            /** Credit Score History */
+            credit_score_history: components["schemas"]["CreditScoreHistoryPoint"][];
+        };
+        /** CreditScoreHistoryPoint */
+        CreditScoreHistoryPoint: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Value */
+            value: string;
+        };
+        /** CreditScoreSummary */
+        CreditScoreSummary: {
+            /** Value */
+            value: string;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Trend */
+            trend: ("up" | "down" | "flat") | null;
+        };
+        /** DashboardSummary */
+        DashboardSummary: {
+            /** Net Worth */
+            net_worth: string;
+            /** Net Worth Delta */
+            net_worth_delta: string;
+            /** This Month Inflow */
+            this_month_inflow: string;
+            /** This Month Outflow */
+            this_month_outflow: string;
+            /** Recent Transactions */
+            recent_transactions: components["schemas"]["TransactionPublic"][];
+            /** Budgets */
+            budgets: components["schemas"]["BudgetPublic"][];
+            latest_credit_score: components["schemas"]["CreditScoreSummary"] | null;
+        };
         /** Envelope[AccessTokenData] */
         Envelope_AccessTokenData_: {
             data: components["schemas"]["AccessTokenData"];
@@ -1114,6 +1317,33 @@ export interface components {
             quantity: number | string;
             /** Cost Basis */
             cost_basis: number | string;
+        };
+        /** HoldingPerformance */
+        HoldingPerformance: {
+            /**
+             * Id
+             * Format: uuid
+             */
+            id: string;
+            /**
+             * Account Id
+             * Format: uuid
+             */
+            account_id: string;
+            /** Symbol */
+            symbol: string;
+            /** Name */
+            name: string;
+            /** Quantity */
+            quantity: string;
+            /** Cost Basis */
+            cost_basis: string;
+            /** Current Value */
+            current_value: string | null;
+            /** Gain Loss */
+            gain_loss: string | null;
+            /** Source */
+            source: string;
         };
         /** HoldingPublic */
         HoldingPublic: {
@@ -1326,6 +1556,16 @@ export interface components {
             /** Note */
             note?: string | null;
         };
+        /** NetWorthHistoryPoint */
+        NetWorthHistoryPoint: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Net Worth */
+            net_worth: string;
+        };
         /** NotificationPublic */
         NotificationPublic: {
             /**
@@ -1355,6 +1595,41 @@ export interface components {
         NotificationUpdateRequest: {
             /** Read */
             read: boolean;
+        };
+        /** Page[CashFlowPoint] */
+        Page_CashFlowPoint_: {
+            /** Data */
+            data: components["schemas"]["CashFlowPoint"][];
+            pagination: components["schemas"]["PaginationMeta"];
+        };
+        /** Page[HoldingPerformance] */
+        Page_HoldingPerformance_: {
+            /** Data */
+            data: components["schemas"]["HoldingPerformance"][];
+            pagination: components["schemas"]["PaginationMeta"];
+        };
+        /** Page[NetWorthHistoryPoint] */
+        Page_NetWorthHistoryPoint_: {
+            /** Data */
+            data: components["schemas"]["NetWorthHistoryPoint"][];
+            pagination: components["schemas"]["PaginationMeta"];
+        };
+        /** Page[SpendingByCategoryRow] */
+        Page_SpendingByCategoryRow_: {
+            /** Data */
+            data: components["schemas"]["SpendingByCategoryRow"][];
+            pagination: components["schemas"]["PaginationMeta"];
+        };
+        /** PaginationMeta */
+        PaginationMeta: {
+            /** Page */
+            page: number;
+            /** Page Size */
+            page_size: number;
+            /** Total Count */
+            total_count: number;
+            /** Total Pages */
+            total_pages: number;
         };
         /** RecurringTransactionCreateRequest */
         RecurringTransactionCreateRequest: {
@@ -1501,6 +1776,15 @@ export interface components {
             target_amount?: number | string | null;
             /** Target Date */
             target_date?: string | null;
+        };
+        /** SpendingByCategoryRow */
+        SpendingByCategoryRow: {
+            /** Category Id */
+            category_id: string | null;
+            /** Category Name */
+            category_name: string | null;
+            /** Total */
+            total: string;
         };
         /** SuccessResponse */
         SuccessResponse: {
@@ -1819,6 +2103,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Envelope_AccountPublic_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    account_balance_history_api_v1_accounts__account_id__balance_history_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path: {
+                account_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Validation Error */
@@ -2638,6 +2958,28 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_summary_api_v1_dashboard_summary_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: components["schemas"]["DashboardSummary"];
+                    };
                 };
             };
         };
@@ -3506,6 +3848,159 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    net_worth_history_api_v1_reports_net_worth_history_get: {
+        parameters: {
+            query?: {
+                granularity?: "day" | "week" | "month";
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_NetWorthHistoryPoint_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    cash_flow_api_v1_reports_cash_flow_get: {
+        parameters: {
+            query?: {
+                granularity?: "day" | "week" | "month";
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_CashFlowPoint_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    spending_by_category_api_v1_reports_spending_by_category_get: {
+        parameters: {
+            query?: {
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_SpendingByCategoryRow_"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    credit_health_api_v1_reports_credit_health_get: {
+        parameters: {
+            query?: {
+                granularity?: "day" | "week" | "month";
+                date_from?: string | null;
+                date_to?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: components["schemas"]["CreditHealthResponse"];
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    investments_api_v1_reports_investments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Page_HoldingPerformance_"];
                 };
             };
         };

@@ -1,35 +1,24 @@
-import { Stack, Text, Title } from '@mantine/core'
 import { Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 import { AccountDetailPage } from './features/accounts/AccountDetailPage'
 import { AccountsPage } from './features/accounts/AccountsPage'
 import { AssetsPage } from './features/assets/AssetsPage'
-import { useMe } from './features/auth/api'
 import { BankDetailPage } from './features/banks/BankDetailPage'
 import { BanksPage } from './features/banks/BanksPage'
 import { BudgetsPage } from './features/budgets/BudgetsPage'
 import { CategoriesPage } from './features/categories/CategoriesPage'
 import { CategoryRulesPage } from './features/category-rules/CategoryRulesPage'
+import { DashboardPage } from './features/dashboard/DashboardPage'
 import { GoalsPage } from './features/goals/GoalsPage'
 import { MerchantsPage } from './features/merchants/MerchantsPage'
 import { NotificationsPage } from './features/notifications/NotificationsPage'
 import { RecurringTransactionsPage } from './features/recurring-transactions/RecurringTransactionsPage'
+import { ReportsPage } from './features/reports/ReportsPage'
 import { TransactionsPage } from './features/transactions/TransactionsPage'
 import { LoginPage } from './features/auth/LoginPage'
 import { RegisterPage } from './features/auth/RegisterPage'
 import { SessionsPage } from './features/auth/SessionsPage'
-
-function Home() {
-  const { data: user } = useMe()
-
-  return (
-    <Stack>
-      <Title order={1}>Dashboard</Title>
-      {user && <Text>Welcome, {user.name}.</Text>}
-    </Stack>
-  )
-}
 
 function App() {
   return (
@@ -38,7 +27,8 @@ function App() {
       <Route path="/register" element={<RegisterPage />} />
       <Route element={<ProtectedRoute />}>
         <Route element={<AppLayout />}>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<DashboardPage />} />
+          <Route path="/reports" element={<ReportsPage />} />
           <Route path="/banks" element={<BanksPage />} />
           <Route path="/banks/:bankId" element={<BankDetailPage />} />
           <Route path="/accounts" element={<AccountsPage />} />

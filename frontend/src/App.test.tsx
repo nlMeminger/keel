@@ -28,7 +28,7 @@ describe('App', () => {
     expect(await screen.findByRole('heading', { name: 'Log in' })).toBeInTheDocument()
   })
 
-  it('shows the home page once a silent refresh succeeds, with zero console errors', async () => {
+  it('shows the dashboard once a silent refresh succeeds, with zero console errors', async () => {
     server.use(
       http.post('/api/v1/auth/refresh', () =>
         HttpResponse.json({ data: { access_token: 'token-123' } }),
@@ -47,9 +47,22 @@ describe('App', () => {
           },
         }),
       ),
+      http.get('/api/v1/dashboard/summary', () =>
+        HttpResponse.json({
+          data: {
+            net_worth: '0',
+            net_worth_delta: '0',
+            this_month_inflow: '0',
+            this_month_outflow: '0',
+            recent_transactions: [],
+            budgets: [],
+            latest_credit_score: null,
+          },
+        }),
+      ),
     )
     renderApp('/')
     expect(await screen.findByRole('heading', { name: 'Keel' })).toBeInTheDocument()
-    expect(await screen.findByText('Welcome, Ada.')).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Dashboard' })).toBeInTheDocument()
   })
 })

@@ -20,9 +20,11 @@ import {
   IconChartPie,
   IconChevronDown,
   IconDevices,
+  IconLayoutDashboard,
   IconLogout,
   IconMoon,
   IconPigMoney,
+  IconReportAnalytics,
   IconSun,
   IconTags,
   IconTarget,
@@ -33,6 +35,8 @@ import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useLogout, useMe } from '../features/auth/api'
 
 const navItems = [
+  { to: '/', label: 'Dashboard', icon: IconLayoutDashboard },
+  { to: '/reports', label: 'Reports', icon: IconReportAnalytics },
   { to: '/banks', label: 'Banks', icon: IconBuildingBank },
   { to: '/accounts', label: 'Accounts', icon: IconWallet },
   { to: '/transactions', label: 'Transactions', icon: IconArrowsLeftRight },
