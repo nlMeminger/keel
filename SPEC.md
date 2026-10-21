@@ -73,6 +73,8 @@ Core entities: `User`, `Plaid_item`, `Bank`, `Account`, `Holding`, `Transaction`
 
 `CategoryRule`: a fixed, AND-ed set of optional conditions rather than a general condition DSL — `merchant_contains` (substring match against the transaction's `description`, not a `Merchant` lookup — rules run before any merchant assignment), `amount_min`/`amount_max` (signed, same convention as the `/transactions` search filters of the same name), `account_id` — plus `category_id` (the result it assigns), `priority` (int, lower value wins when multiple rules match the same transaction), `active`.
 
+`RecurringTransaction`: `name`, `amount_expected`, `frequency` (`weekly`|`monthly`|`quarterly`|`yearly`), `next_due_date` (nullable), `last_paid_date` (nullable, set from its most recent `RecurringTransactionPayment` — not directly editable), `is_bill` (bool, default `false`), plus optional `account_id`/`category_id`/`merchant_id` links. Manual entry only for v1 (API_SPEC.md §11) — `next_due_date` exists now so scheduled reminders have a field to read once that deferred job ships, but nothing writes or reads it for reminders yet.
+
 `Notification`: `type` (free-form string), `title`, `body`, `related_type`/`related_id` (nullable — points back at whatever triggered it, e.g. a `Bank` needing reauth), `read_at` (nullable timestamp, not a boolean — gives "when," not just "whether").
 
 `User` has: `role` (`user` | `admin`); `status` (`active` | `suspended`); `plaid_enabled` (default `true`); `plaid_monthly_call_limit` (default `null` — unlimited); `must_change_password` (set by an admin-initiated password reset). Defaults always favor unrestricted access; admins opt a specific user *into* a restriction, never the other way around. See [API_SPEC.md §18](API_SPEC.md#18-admin).

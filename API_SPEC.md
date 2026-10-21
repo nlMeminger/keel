@@ -137,8 +137,9 @@ Crossing a progress milestone (e.g. 50%/100% of `target_amount`) on this route c
 | Method | Path | Description |
 |---|---|---|
 | GET | `/recurring-transactions` | List detected/manual recurring transactions (bills + subscriptions) |
+| POST | `/recurring-transactions` | Create one by hand: `{ name, amount_expected, frequency, account_id?, category_id?, merchant_id?, next_due_date?, is_bill? }` |
 | PATCH | `/recurring-transactions/{id}` | Update (e.g. mark as a bill, adjust expected amount) |
-| POST | `/recurring-transactions/{id}/payments` | Record a payment against it |
+| POST | `/recurring-transactions/{id}/payments` | Record a payment against it: `{ amount, date }`. Returns the updated parent (fresh `last_paid_date`), not the raw payment |
 | DELETE | `/recurring-transactions/{id}` | Remove/ignore |
 
 Manual create/edit/payment-tracking ships in v1. Scheduled auto-detection (`process_recurring_bills`, matching occurrences by merchant/amount/date pattern) is **deferred post-v1** — see [ROADMAP.md](ROADMAP.md) Deferred section; the matching heuristic needs its own design pass before it's built, so it's not in §16's active scheduled-job list below.

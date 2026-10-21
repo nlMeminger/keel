@@ -14,6 +14,7 @@ from app.holdings.router import router as holdings_router
 from app.merchants.router import router as merchants_router
 from app.metrics.router import router as metrics_router
 from app.notifications.router import router as notifications_router
+from app.recurring_transactions.router import router as recurring_transactions_router
 from app.sync.router import router as sync_router
 from app.transactions.router import router as transactions_router
 
@@ -40,6 +41,7 @@ app.include_router(holdings_router, prefix="/api/v1")
 app.include_router(merchants_router, prefix="/api/v1")
 app.include_router(metrics_router, prefix="/api/v1")
 app.include_router(notifications_router, prefix="/api/v1")
+app.include_router(recurring_transactions_router, prefix="/api/v1")
 app.include_router(sync_router, prefix="/api/v1")
 app.include_router(transactions_router, prefix="/api/v1")
 
