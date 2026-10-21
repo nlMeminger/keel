@@ -17,14 +17,14 @@ from app.admin.schemas import (
     AdminUserUpdateRequest,
 )
 from app.auth.models import User
-from app.core.envelope import Envelope, paginate
+from app.core.envelope import Envelope, Page, paginate
 from app.database import get_db
 from app.dependencies import PaginationParams, pagination_params
 
 router = APIRouter(prefix="/admin/users", tags=["admin"])
 
 
-@router.get("")
+@router.get("", response_model=Page[AdminUserPublic])
 def list_users(
     role: str | None = Query(default=None),
     status_filter: str | None = Query(default=None, alias="status"),

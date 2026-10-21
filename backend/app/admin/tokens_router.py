@@ -13,14 +13,14 @@ from app.admin.schemas import (
     AdminApiTokenUpdateRequest,
 )
 from app.auth.models import User
-from app.core.envelope import Envelope, paginate
+from app.core.envelope import Envelope, Page, paginate
 from app.database import get_db
 from app.dependencies import PaginationParams, pagination_params
 
 router = APIRouter(prefix="/admin/api-tokens", tags=["admin"])
 
 
-@router.get("")
+@router.get("", response_model=Page[AdminApiTokenPublic])
 def list_api_tokens(
     pagination: PaginationParams = Depends(pagination_params),
     db: DbSession = Depends(get_db),

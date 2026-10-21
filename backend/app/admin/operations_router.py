@@ -15,14 +15,14 @@ from app.admin.schemas import (
     SyncAllTriggerResponseData,
 )
 from app.auth.models import User
-from app.core.envelope import Envelope, paginate
+from app.core.envelope import Envelope, Page, paginate
 from app.database import get_db
 from app.dependencies import PaginationParams, pagination_params
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-@router.get("/jobs")
+@router.get("/jobs", response_model=Page[AdminJobPublic])
 def list_jobs(
     job_type: str | None = Query(default=None, alias="type"),
     status_filter: str | None = Query(default=None, alias="status"),
@@ -38,7 +38,7 @@ def list_jobs(
     }
 
 
-@router.get("/logs")
+@router.get("/logs", response_model=Page[LogEntryPublic])
 def list_logs(
     level: str | None = Query(default=None),
     date_from: datetime | None = Query(default=None),

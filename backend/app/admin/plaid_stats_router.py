@@ -6,16 +6,16 @@ from sqlalchemy.orm import Session as DbSession
 
 from app.admin import service
 from app.admin.dependencies import require_admin
-from app.admin.schemas import PlaidApiCallPublic, PlaidStatsGroupBy
+from app.admin.schemas import PlaidApiCallPublic, PlaidApiStatRow, PlaidStatsGroupBy
 from app.auth.models import User
-from app.core.envelope import paginate, single_page
+from app.core.envelope import Page, paginate, single_page
 from app.database import get_db
 from app.dependencies import PaginationParams, pagination_params
 
 router = APIRouter(prefix="/admin/plaid", tags=["admin"])
 
 
-@router.get("/api-stats")
+@router.get("/api-stats", response_model=Page[PlaidApiStatRow])
 def api_stats(
     group_by: PlaidStatsGroupBy = Query(...),
     user_id: uuid.UUID | None = Query(default=None),
@@ -28,7 +28,7 @@ def api_stats(
     return single_page(rows)
 
 
-@router.get("/calls")
+@router.get("/calls", response_model=Page[PlaidApiCallPublic])
 def list_calls(
     user_id: uuid.UUID | None = Query(default=None),
     endpoint: str | None = Query(default=None),
