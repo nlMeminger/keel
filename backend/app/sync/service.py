@@ -12,7 +12,7 @@ from app.auth.models import User
 from app.banks import service as banks_service
 from app.banks.models import Bank, PlaidItem
 from app.core.encryption import decrypt
-from app.core.plaid_client import get_plaid_client, plaid_error_to_app_error
+from app.core.plaid_client import ensure_plaid_enabled, get_plaid_client, plaid_error_to_app_error
 from app.transactions.models import Transaction
 from app.transactions.transfer import detect_transfer_candidates
 
@@ -25,11 +25,14 @@ def _user_banks(db: DbSession, user: User, bank_id: uuid.UUID | None) -> list[Ba
     return list(db.scalars(select(Bank).where(Bank.owner_id == user.id)))
 
 
-def sync_transactions_for_bank(db: DbSession, bank: Bank, item: PlaidItem) -> dict[str, int]:
+def sync_transactions_for_bank(
+    db: DbSession, user: User, bank: Bank, item: PlaidItem
+) -> dict[str, int]:
     """Calls Plaid's /transactions/sync in a cursor loop until has_more is false, upserting
     added/modified/removed transactions into the shared Transaction table — Plaid signs
     positive=outflow, the opposite of this app's convention (SPEC.md §5), so every amount is
     flipped on the way in. Persists the new cursor on PlaidItem once the loop completes."""
+    ensure_plaid_enabled(user)
     client = get_plaid_client()
     access_token = decrypt(item.access_token)
     account_map = {
@@ -117,7 +120,7 @@ def sync_transactions_for_user(
     for bank in _user_banks(db, user, bank_id):
         item = db.get(PlaidItem, bank.plaid_item_id)
         assert item is not None
-        result = sync_transactions_for_bank(db, bank, item)
+        result = sync_transactions_for_bank(db, user, bank, item)
         for key, value in result.items():
             totals[key] += value
     return totals
@@ -139,5 +142,5 @@ def full_bank_sync(db: DbSession, user: User, bank: Bank, item: PlaidItem) -> di
     both balances/holdings and transactions in one job, rather than making the user trigger
     two separate syncs for one button."""
     accounts_synced = len(banks_service.pull_accounts_and_holdings(db, user, bank, item))
-    transaction_result = sync_transactions_for_bank(db, bank, item)
+    transaction_result = sync_transactions_for_bank(db, user, bank, item)
     return {"accounts_synced": accounts_synced, **transaction_result}

@@ -14,7 +14,7 @@ from app.auth.models import User
 from app.banks.models import Bank, PlaidItem
 from app.core.encryption import decrypt, encrypt
 from app.core.errors import AppError
-from app.core.plaid_client import get_plaid_client, plaid_error_to_app_error
+from app.core.plaid_client import ensure_plaid_enabled, get_plaid_client, plaid_error_to_app_error
 from app.holdings.models import Holding
 
 
@@ -105,6 +105,7 @@ def pull_accounts_and_holdings(
     Plaid and upserts them into the same Account/Holding tables Phase 4 built for manual
     entry — idempotent on Plaid's own account_id, so this is safe to call again on every
     later balance/transaction sync (7.4/7.5), not just once at link time."""
+    ensure_plaid_enabled(user)
     client = get_plaid_client()
     access_token = decrypt(item.access_token)
     try:

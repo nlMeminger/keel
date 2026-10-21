@@ -9,6 +9,7 @@ from app.banks import service
 from app.banks.models import Bank, PlaidItem
 from app.banks.schemas import BankPublic, BankSyncResponse
 from app.core.envelope import Envelope, paginate
+from app.core.plaid_client import ensure_plaid_enabled
 from app.database import get_db
 from app.dependencies import PaginationParams, get_current_user, pagination_params
 from app.jobs.service import create_job
@@ -52,6 +53,7 @@ def sync_bank(
     bank_id: uuid.UUID, db: DbSession = Depends(get_db), user: User = Depends(get_current_user)
 ) -> dict[str, BankSyncResponse]:
     service.get_bank(db, user, bank_id)  # 404s before enqueueing anything for another user's id
+    ensure_plaid_enabled(user)  # likewise: 403 here, not a 500 surfaced from inside the task
     job = create_job(db, "transaction_sync", owner_id=user.id)
     full_bank_sync_task.delay(str(job.id), str(user.id), str(bank_id))
     return {"data": BankSyncResponse(job_id=job.id)}

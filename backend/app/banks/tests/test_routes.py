@@ -4,6 +4,7 @@ from collections.abc import Callable
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session as OrmSession
 
+from app.auth.models import User
 from app.banks.models import Bank, PlaidItem
 
 
@@ -39,6 +40,22 @@ def test_sync_bank_404_for_nonexistent_bank(
     token, _user_id = register_and_login("sync-404@example.com")
     resp = client.post(f"/api/v1/banks/{uuid.uuid4()}/sync", headers=_auth_headers(token))
     assert resp.status_code == 404
+
+
+def test_sync_bank_403s_when_plaid_disabled_for_user(
+    client: TestClient,
+    register_and_login: Callable[[str], tuple[str, uuid.UUID]],
+    db: OrmSession,
+) -> None:
+    token, user_id = register_and_login("sync-plaid-disabled@example.com")
+    bank = _make_bank(db, user_id)
+    user = db.get(User, user_id)
+    assert user is not None
+    user.plaid_enabled = False
+    db.commit()
+
+    resp = client.post(f"/api/v1/banks/{bank.id}/sync", headers=_auth_headers(token))
+    assert resp.status_code == 403
 
 
 def test_sync_bank_404_for_another_users_bank(
