@@ -36,7 +36,7 @@ backend/
 │   │   └── errors.py            # exceptions -> {error:{code,message}} envelope
 │   ├── auth/                    # §1 — User, Session
 │   ├── plaid_link/               # §2
-│   ├── banks/                    # §3 — Bank, Plaid_item
+│   ├── banks/                    # §3 — Bank, Plaid_item, Institution + seed.py
 │   ├── accounts/                 # §4 — polymorphic Account
 │   ├── transactions/             # §5
 │   ├── categories/                # §6 — + seed.py

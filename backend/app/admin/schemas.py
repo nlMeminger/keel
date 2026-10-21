@@ -221,3 +221,12 @@ class AdminAuditLogPublic(BaseModel):
             metadata=log.metadata_,
             created_at=log.created_at,
         )
+
+
+class CategoriesSeedResponseData(BaseModel):
+    created: int
+
+
+class InstitutionsSeedResponseData(BaseModel):
+    created: int
+    updated: int

@@ -87,6 +87,10 @@ Mapping Plaid's own (`type`, `subtype`) onto this app's fixed `account_type` set
 
 `AdminAuditLog` entity backing `/admin/audit-log`: `id`, `admin_user_id`, `action`, `target_type`, `target_id`, `metadata` (JSON), `created_at`.
 
+`LogEntry` entity backing `/admin/logs` (added Phase 8.3, not in the original entity list above): `id`, `level`, `logger_name`, `message`, `created_at`. Persisted by a `logging.Handler` attached to the `"app"` logger hierarchy (`app.admin.log_capture`) rather than tailing a file/stdout stream, so the admin surface can paginate/filter it like any other list and it works the same regardless of how many backend containers are running. `message` is masked (redacting any 20+-character token-shaped run to its last 4 chars) before it's ever written, not just at read time — a safety net alongside call sites already being expected to mask secrets themselves ([SPEC.md §6](#6-security-baseline-non-negotiable-from-day-one)).
+
+`Institution` entity backing `/admin/banks/seed` (added Phase 8.7, not in the original entity list above): `id`, `plaid_institution_id`, `name`, `logo_url`. Pulled from Plaid's `/institutions/get`, idempotent on `plaid_institution_id`. Not read by Plaid Link today — Link's own hosted widget already handles institution search/selection client-side — kept as reference data for a possible future "pick your bank" screen that wouldn't need to round-trip to Plaid for it.
+
 `Session` entity backing refresh-token rotation and revocation (see [API_SPEC.md §1](API_SPEC.md#1-auth)): `id`, `user_id`, `family_id`, `token_hash`, `issued_at`, `expires_at`, `revoked_at`, `last_used_at`, `user_agent`, `ip_address`. Backs self-service logout, "log out everywhere," and the admin `revoke-sessions` action.
 
 ## 6. Security baseline (non-negotiable from day one)

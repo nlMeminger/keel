@@ -88,3 +88,22 @@ class Bank(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class Institution(Base):
+    """Institution reference list (API_SPEC.md §18's `POST /admin/banks/seed`) — pulled
+    from Plaid's `/institutions/get`, idempotent on `plaid_institution_id`. Unused by Plaid
+    Link itself today (Link's own hosted widget already handles institution search), kept
+    for a future "pick your bank" screen that doesn't need to round-trip to Plaid for it."""
+
+    __tablename__ = "institutions"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    plaid_institution_id: Mapped[str] = mapped_column(unique=True, index=True)
+    name: Mapped[str]
+    logo_url: Mapped[str | None] = mapped_column(default=None)
+
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
