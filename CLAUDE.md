@@ -119,7 +119,7 @@ Full baseline: [SPEC.md §6](SPEC.md#6-security-baseline-non-negotiable-from-day
 - Don't bundle unrelated changes into one commit (e.g. a feature plus an unrelated formatting pass); split them so each stays independently revertable.
 - Every commit should leave the repo in a working state (tests pass). Reversibility only holds if the commit you'd revert *to* also worked.
 - When the branch's work is complete and passing (see Definition of done below), merge it into `main` locally. This local merge is covered by the same standing authorization as commits — no need to ask first. Delete the merged branch locally afterward to keep the branch list clean.
-- This standing authorization covers local commits and local merges only — pushing to GitHub (a feature branch or `main`), force-pushing, or amending a published commit still follows the normal confirm-first rules: ask in chat and get an explicit go-ahead each time before pushing.
+- Standing authorization also covers pushing: once a unit of work is complete and passing (same bar as the commit/merge rules above), push `main` (after the local merge) to `origin` without waiting to be asked each time. Force-pushing or amending a published commit are not covered by this — those still follow the normal confirm-first rules: ask in chat and get an explicit go-ahead each time before either.
 
 ## Don't do this
 Domain-specific traps this app invites, not generic advice:
