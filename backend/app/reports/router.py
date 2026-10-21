@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session as DbSession
 
 from app.auth.models import User
-from app.core.envelope import single_page
+from app.core.envelope import Page, single_page
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.reports import service
@@ -29,7 +29,7 @@ def _this_month_start() -> date:
     return date.today().replace(day=1)
 
 
-@router.get("/net-worth-history")
+@router.get("/net-worth-history", response_model=Page[NetWorthHistoryPoint])
 def net_worth_history(
     granularity: GranularityParam = Query(default="day"),
     date_from: date | None = Query(default=None),
@@ -47,7 +47,7 @@ def net_worth_history(
     )
 
 
-@router.get("/cash-flow")
+@router.get("/cash-flow", response_model=Page[CashFlowPoint])
 def cash_flow(
     granularity: GranularityParam = Query(default="day"),
     date_from: date | None = Query(default=None),
@@ -66,7 +66,7 @@ def cash_flow(
     )
 
 
-@router.get("/spending-by-category")
+@router.get("/spending-by-category", response_model=Page[SpendingByCategoryRow])
 def spending_by_category(
     date_from: date | None = Query(default=None),
     date_to: date | None = Query(default=None),
@@ -125,7 +125,7 @@ def credit_health(
     }
 
 
-@router.get("/investments")
+@router.get("/investments", response_model=Page[HoldingPerformance])
 def investments(
     db: DbSession = Depends(get_db),
     user: User = Depends(get_current_user),
