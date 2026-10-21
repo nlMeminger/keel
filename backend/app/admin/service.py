@@ -1,15 +1,22 @@
 import uuid
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session as DbSession
 
 from app.admin.models import LogEntry
-from app.admin.schemas import AdminConfigResponseData, AdminUserPublic, BeatScheduleEntry
+from app.admin.schemas import (
+    AdminConfigResponseData,
+    AdminUserPublic,
+    BeatScheduleEntry,
+    PlaidApiStatRow,
+    PlaidStatsGroupBy,
+)
 from app.auth.models import User
 from app.auth.service import revoke_other_sessions
 from app.banks import service as banks_service
-from app.banks.models import Bank, PlaidItem
+from app.banks.models import Bank, PlaidAPICall, PlaidItem
 from app.banks.service import remove_plaid_item
 from app.banks.tasks import reconcile_removed_plaid_items_task
 from app.celery_app import celery_app
@@ -233,3 +240,56 @@ def get_config() -> AdminConfigResponseData:
         cors_origins=settings.cors_origins,
         beat_schedule=beat_schedule,
     )
+
+
+def _group_column(group_by: PlaidStatsGroupBy) -> Any:
+    # Any: InstrumentedAttribute and func.to_char(...) share no common SQLAlchemy stub type
+    # narrower than this that both select()/group_by() below accept.
+    if group_by == "user":
+        return PlaidAPICall.user_id
+    if group_by == "endpoint":
+        return PlaidAPICall.endpoint
+    return func.to_char(PlaidAPICall.created_at, "YYYY-MM")
+
+
+def plaid_api_stats(
+    db: DbSession,
+    group_by: PlaidStatsGroupBy,
+    user_id: uuid.UUID | None,
+    date_from: datetime | None,
+    date_to: datetime | None,
+) -> list[PlaidApiStatRow]:
+    """GET /admin/plaid/api-stats (API_SPEC.md §18) — call counts only, never a hardcoded
+    dollar estimate (Plaid's per-endpoint pricing varies and changes). One row per distinct
+    group value, never a combined total across groups."""
+    group_col = _group_column(group_by)
+    stmt = select(group_col, func.count()).group_by(group_col)
+    if user_id is not None:
+        stmt = stmt.where(PlaidAPICall.user_id == user_id)
+    if date_from is not None:
+        stmt = stmt.where(PlaidAPICall.created_at >= date_from)
+    if date_to is not None:
+        stmt = stmt.where(PlaidAPICall.created_at <= date_to)
+    rows = db.execute(stmt).all()
+    return [PlaidApiStatRow(group=str(key), count=count) for key, count in rows]
+
+
+def list_plaid_calls_stmt(
+    user_id: uuid.UUID | None,
+    endpoint: str | None,
+    status: str | None,
+    date_from: datetime | None,
+    date_to: datetime | None,
+) -> Select[PlaidAPICall]:
+    stmt = select(PlaidAPICall).order_by(PlaidAPICall.created_at.desc())
+    if user_id is not None:
+        stmt = stmt.where(PlaidAPICall.user_id == user_id)
+    if endpoint is not None:
+        stmt = stmt.where(PlaidAPICall.endpoint == endpoint)
+    if status is not None:
+        stmt = stmt.where(PlaidAPICall.status == status)
+    if date_from is not None:
+        stmt = stmt.where(PlaidAPICall.created_at >= date_from)
+    if date_to is not None:
+        stmt = stmt.where(PlaidAPICall.created_at <= date_to)
+    return stmt

@@ -132,3 +132,25 @@ class AdminConfigResponseData(BaseModel):
     environment: str
     cors_origins: list[str]
     beat_schedule: list[BeatScheduleEntry]
+
+
+PlaidStatsGroupBy = Literal["user", "endpoint", "month"]
+
+
+class PlaidApiStatRow(BaseModel):
+    """One aggregated row from GET /admin/plaid/api-stats — `group` is the stringified
+    group key: a user id, an endpoint name, or a "YYYY-MM" month, depending on `group_by`."""
+
+    group: str
+    count: int
+
+
+class PlaidApiCallPublic(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    user_id: uuid.UUID
+    endpoint: str
+    status: str
+    error_code: str | None
+    created_at: datetime
