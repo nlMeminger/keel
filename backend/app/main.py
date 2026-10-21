@@ -9,6 +9,7 @@ from app.categories.router import router as categories_router
 from app.category_rules.router import router as category_rules_router
 from app.config import settings
 from app.core.errors import register_error_handlers
+from app.dashboard.router import router as dashboard_router
 from app.goals.router import router as goals_router
 from app.holdings.router import router as holdings_router
 from app.merchants.router import router as merchants_router
@@ -37,6 +38,7 @@ app.include_router(auth_router, prefix="/api/v1")
 app.include_router(budgets_router, prefix="/api/v1")
 app.include_router(categories_router, prefix="/api/v1")
 app.include_router(category_rules_router, prefix="/api/v1")
+app.include_router(dashboard_router, prefix="/api/v1")
 app.include_router(goals_router, prefix="/api/v1")
 app.include_router(holdings_router, prefix="/api/v1")
 app.include_router(merchants_router, prefix="/api/v1")
