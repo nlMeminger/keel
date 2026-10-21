@@ -13,8 +13,10 @@ import {
 import { useDisclosure } from '@mantine/hooks'
 import {
   IconArrowsLeftRight,
+  IconBell,
   IconBuildingBank,
   IconBuildingStore,
+  IconCalendarRepeat,
   IconChartPie,
   IconChevronDown,
   IconDevices,
@@ -25,6 +27,7 @@ import {
   IconTags,
   IconTarget,
   IconWallet,
+  IconWand,
 } from '@tabler/icons-react'
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useLogout, useMe } from '../features/auth/api'
@@ -34,10 +37,13 @@ const navItems = [
   { to: '/accounts', label: 'Accounts', icon: IconWallet },
   { to: '/transactions', label: 'Transactions', icon: IconArrowsLeftRight },
   { to: '/categories', label: 'Categories', icon: IconTags },
+  { to: '/category-rules', label: 'Category rules', icon: IconWand },
   { to: '/merchants', label: 'Merchants', icon: IconBuildingStore },
   { to: '/budgets', label: 'Budgets', icon: IconChartPie },
   { to: '/goals', label: 'Goals', icon: IconTarget },
+  { to: '/recurring-transactions', label: 'Recurring', icon: IconCalendarRepeat },
   { to: '/assets', label: 'Assets', icon: IconPigMoney },
+  { to: '/notifications', label: 'Notifications', icon: IconBell },
   { to: '/settings/sessions', label: 'Sessions', icon: IconDevices },
 ]
 
@@ -98,9 +104,7 @@ export function AppLayout() {
               to={item.to}
               label={item.label}
               leftSection={<item.icon size={18} />}
-              active={
-                location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)
-              }
+              active={location.pathname === item.to || location.pathname.startsWith(`${item.to}/`)}
               onClick={close}
             />
           ))}

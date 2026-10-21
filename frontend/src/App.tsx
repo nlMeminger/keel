@@ -10,8 +10,11 @@ import { BankDetailPage } from './features/banks/BankDetailPage'
 import { BanksPage } from './features/banks/BanksPage'
 import { BudgetsPage } from './features/budgets/BudgetsPage'
 import { CategoriesPage } from './features/categories/CategoriesPage'
+import { CategoryRulesPage } from './features/category-rules/CategoryRulesPage'
 import { GoalsPage } from './features/goals/GoalsPage'
 import { MerchantsPage } from './features/merchants/MerchantsPage'
+import { NotificationsPage } from './features/notifications/NotificationsPage'
+import { RecurringTransactionsPage } from './features/recurring-transactions/RecurringTransactionsPage'
 import { TransactionsPage } from './features/transactions/TransactionsPage'
 import { LoginPage } from './features/auth/LoginPage'
 import { RegisterPage } from './features/auth/RegisterPage'
@@ -43,8 +46,11 @@ function App() {
           <Route path="/assets" element={<AssetsPage />} />
           <Route path="/budgets" element={<BudgetsPage />} />
           <Route path="/categories" element={<CategoriesPage />} />
+          <Route path="/category-rules" element={<CategoryRulesPage />} />
           <Route path="/goals" element={<GoalsPage />} />
           <Route path="/merchants" element={<MerchantsPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/recurring-transactions" element={<RecurringTransactionsPage />} />
           <Route path="/transactions" element={<TransactionsPage />} />
           <Route path="/settings/sessions" element={<SessionsPage />} />
         </Route>
