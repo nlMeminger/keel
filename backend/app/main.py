@@ -21,6 +21,7 @@ from app.recurring_transactions.router import router as recurring_transactions_r
 from app.reports.router import router as reports_router
 from app.sync.router import router as sync_router
 from app.transactions.router import router as transactions_router
+from app.webhooks.router import router as webhooks_router
 
 app = FastAPI(title="Money App API", version="0.1.0")
 
@@ -52,6 +53,7 @@ app.include_router(recurring_transactions_router, prefix="/api/v1")
 app.include_router(reports_router, prefix="/api/v1")
 app.include_router(sync_router, prefix="/api/v1")
 app.include_router(transactions_router, prefix="/api/v1")
+app.include_router(webhooks_router, prefix="/api/v1")
 
 
 @app.get("/health")
