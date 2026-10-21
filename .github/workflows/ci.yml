@@ -12,13 +12,13 @@ jobs:
       postgres:
         image: postgres:16-alpine
         env:
-          POSTGRES_USER: moneyapp
-          POSTGRES_PASSWORD: moneyapp
-          POSTGRES_DB: moneyapp
+          POSTGRES_USER: keel
+          POSTGRES_PASSWORD: keel
+          POSTGRES_DB: keel
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U moneyapp"
+          --health-cmd "pg_isready -U keel"
           --health-interval 2s
           --health-timeout 3s
           --health-retries 20
@@ -32,7 +32,7 @@ jobs:
           --health-timeout 3s
           --health-retries 20
     env:
-      DATABASE_URL: postgresql+psycopg://moneyapp:moneyapp@localhost:5432/moneyapp
+      DATABASE_URL: postgresql+psycopg://keel:keel@localhost:5432/keel
       REDIS_URL: redis://localhost:6379/0
     defaults:
       run:
@@ -49,7 +49,7 @@ jobs:
         run: uv sync --frozen
 
       - name: Create test database
-        run: PGPASSWORD=moneyapp psql -h localhost -U moneyapp -d moneyapp -c "CREATE DATABASE moneyapp_test;"
+        run: PGPASSWORD=keel psql -h localhost -U keel -d keel -c "CREATE DATABASE keel_test;"
 
       - name: Ruff lint
         run: uv run ruff check .

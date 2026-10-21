@@ -1,7 +1,7 @@
 [project]
-name = "moneyapp-backend"
+name = "keel-backend"
 version = "0.1.0"
-description = "Money App v2 backend"
+description = "Keel backend"
 requires-python = ">=3.12"
 dependencies = [
     "fastapi>=0.115",

@@ -1,4 +1,4 @@
-# Money App frontend
+# Keel frontend
 
 React + TypeScript SPA (Vite), TanStack Query for server state, React Router for routing.
 

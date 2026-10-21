@@ -956,7 +956,7 @@ wheels = [
 ]
 
 [[package]]
-name = "moneyapp-backend"
+name = "keel-backend"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
