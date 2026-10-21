@@ -7,6 +7,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+import app.database as database_module
 from app.categories.seed import seed_categories
 from app.celery_app import celery_app
 from app.config import settings
@@ -62,6 +63,18 @@ def _reset_redis() -> Generator[None, None, None]:
     rate_limit.get_redis().flushdb()
     yield
     settings.redis_url = original_url
+
+
+@pytest.fixture(autouse=True)
+def _reset_job_database_session() -> Generator[None, None, None]:
+    """Celery tasks instantiate a DB session directly (no FastAPI dependency to override) —
+    eagerly-run tasks during tests (task_always_eager above) must still resolve to the test
+    database, not the real one. Task modules reference `database_module.SessionLocal` at call
+    time, rather than importing the name directly, specifically so this patch takes effect."""
+    original = database_module.SessionLocal
+    database_module.SessionLocal = TestSessionLocal
+    yield
+    database_module.SessionLocal = original
 
 
 @pytest.fixture

@@ -101,8 +101,8 @@ Category seeding happens via a migration/CLI command, not a public endpoint. `ow
 | POST | `/category-rules` | Create a rule: `{ merchant_contains?, amount_min?, amount_max?, account_id?, category_id, priority, active }` — all provided conditions are AND-ed; `category_id` is what gets assigned on a match |
 | PATCH | `/category-rules/{rule_id}` | Update a rule |
 | DELETE | `/category-rules/{rule_id}` | Delete a rule |
-| POST | `/category-rules/test` | Dry-run a rule against existing transactions, return matches without applying |
-| POST | `/category-rules/apply` | Apply all active rules to existing uncategorized transactions, in `priority` order (first match wins). Returns `202` + job id (see §16) rather than blocking — can touch a large transaction set |
+| POST | `/category-rules/test` | Dry-run against the user's existing uncategorized transactions: `{ merchant_contains?, amount_min?, amount_max?, account_id? }` (the same matching conditions a saved rule has, without `category_id`/`priority`/`active`). Returns matches, writes nothing |
+| POST | `/category-rules/apply` | Apply all active rules to existing uncategorized transactions, ascending `priority` order (lower value wins first). Returns `202` + job id (see §16) rather than blocking — can touch a large transaction set |
 
 ## 8. Merchants
 | Method | Path | Description |

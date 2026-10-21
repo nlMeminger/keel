@@ -170,6 +170,41 @@ def test_delete_category_referenced_by_budget_returns_409_unless_reassigned(
     assert str(budget.category_id) == other_category_id
 
 
+def test_delete_category_referenced_by_category_rule_returns_409_unless_reassigned(
+    client: TestClient, register_and_login: Callable[[str], tuple[str, uuid.UUID]]
+) -> None:
+    token, _user_id = register_and_login("category-rule-deleter@example.com")
+    category_id = client.post(
+        "/api/v1/categories",
+        json={"primary_category": "Subscriptions"},
+        headers=_auth_headers(token),
+    ).json()["data"]["id"]
+    other_category_id = client.post(
+        "/api/v1/categories",
+        json={"primary_category": "Entertainment"},
+        headers=_auth_headers(token),
+    ).json()["data"]["id"]
+    rule_id = client.post(
+        "/api/v1/category-rules",
+        json={"merchant_contains": "netflix", "category_id": category_id},
+        headers=_auth_headers(token),
+    ).json()["data"]["id"]
+
+    conflict_resp = client.delete(f"/api/v1/categories/{category_id}", headers=_auth_headers(token))
+    assert conflict_resp.status_code == 409
+
+    ok_resp = client.delete(
+        f"/api/v1/categories/{category_id}",
+        params={"reassign_to": other_category_id},
+        headers=_auth_headers(token),
+    )
+    assert ok_resp.status_code == 204
+
+    rule_resp = client.get("/api/v1/category-rules", headers=_auth_headers(token))
+    rule = next(r for r in rule_resp.json()["data"] if r["id"] == rule_id)
+    assert rule["category_id"] == other_category_id
+
+
 def test_delete_custom_category_with_no_references_succeeds(
     client: TestClient, register_and_login: Callable[[str], tuple[str, uuid.UUID]]
 ) -> None:

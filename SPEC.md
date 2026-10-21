@@ -71,7 +71,7 @@ Core entities: `User`, `Plaid_item`, `Bank`, `Account`, `Holding`, `Transaction`
 
 `Merchant`: `name`, `aliases` (array of raw bank-provided description strings that map to it). Purely an aliasing/grouping construct for display and search — merchant-based auto-categorization goes through `CategoryRule`, not a second `default_category_id` mechanism on `Merchant` itself (two separate auto-categorization paths would need a precedence rule between them for no real benefit).
 
-`CategoryRule`: a fixed, AND-ed set of optional conditions rather than a general condition DSL — `merchant_contains` (substring match), `amount_min`/`amount_max`, `account_id` — plus `category_id` (the result it assigns), `priority` (int, breaks ties when multiple rules match the same transaction), `active`.
+`CategoryRule`: a fixed, AND-ed set of optional conditions rather than a general condition DSL — `merchant_contains` (substring match against the transaction's `description`, not a `Merchant` lookup — rules run before any merchant assignment), `amount_min`/`amount_max` (signed, same convention as the `/transactions` search filters of the same name), `account_id` — plus `category_id` (the result it assigns), `priority` (int, lower value wins when multiple rules match the same transaction), `active`.
 
 `Notification`: `type` (free-form string), `title`, `body`, `related_type`/`related_id` (nullable — points back at whatever triggered it, e.g. a `Bank` needing reauth), `read_at` (nullable timestamp, not a boolean — gives "when," not just "whether").
 

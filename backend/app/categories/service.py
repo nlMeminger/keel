@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session as DbSession
 from app.auth.models import User
 from app.budgets.models import Budget
 from app.categories.models import Category
+from app.category_rules.models import CategoryRule
 from app.core.errors import AppError
 from app.transactions.models import Transaction
 
@@ -92,8 +93,6 @@ def delete_category(
 ) -> None:
     category = _get_category_for_edit(db, user, category_id)
 
-    # Reference check covers Transaction and Budget; extend for CategoryRule once Phase
-    # 5.1 adds that table (API_SPEC.md §6).
     transaction_count = (
         db.scalar(
             select(func.count())
@@ -106,10 +105,23 @@ def delete_category(
         db.scalar(select(func.count()).select_from(Budget).where(Budget.category_id == category_id))
         or 0
     )
-    if transaction_count + budget_count > 0:
+    # CategoryRule.category_id is NOT NULL (a rule with no target category makes no sense),
+    # so it can't fall out of this check the way Transaction/Budget do via reassignment —
+    # it must always be reassigned rather than left referencing a deleted category.
+    rule_count = (
+        db.scalar(
+            select(func.count())
+            .select_from(CategoryRule)
+            .where(CategoryRule.category_id == category_id)
+        )
+        or 0
+    )
+    if transaction_count + budget_count + rule_count > 0:
         if reassign_to is None:
             raise AppError(
-                409, "category_in_use", "Category is still referenced by transactions or budgets."
+                409,
+                "category_in_use",
+                "Category is still referenced by transactions, budgets, or category rules.",
             )
         target = _visible_category_or_none(db, user, reassign_to)
         if target is None:
@@ -121,6 +133,11 @@ def delete_category(
         )
         db.execute(
             update(Budget).where(Budget.category_id == category_id).values(category_id=reassign_to)
+        )
+        db.execute(
+            update(CategoryRule)
+            .where(CategoryRule.category_id == category_id)
+            .values(category_id=reassign_to)
         )
 
     db.delete(category)
