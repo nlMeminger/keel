@@ -6,7 +6,7 @@ celery_app = Celery(
     "moneyapp",
     broker=settings.celery_broker_url,
     backend=settings.celery_result_backend,
-    include=["app.jobs.tasks", "app.category_rules.tasks"],
+    include=["app.jobs.tasks", "app.category_rules.tasks", "app.sync.tasks"],
 )
 
 celery_app.conf.update(

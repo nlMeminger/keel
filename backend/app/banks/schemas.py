@@ -29,3 +29,7 @@ class BankPublic(BaseModel):
             account_count=account_count,
             created_at=bank.created_at,
         )
+
+
+class BankSyncResponse(BaseModel):
+    job_id: uuid.UUID

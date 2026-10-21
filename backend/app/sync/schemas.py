@@ -6,6 +6,15 @@ from pydantic import BaseModel
 from app.jobs.models import Job
 
 
+class SyncTriggerRequest(BaseModel):
+    # Omitted => every bank the caller has linked; set => just that one (API_SPEC.md §16).
+    bank_id: uuid.UUID | None = None
+
+
+class SyncTriggerResponse(BaseModel):
+    job_id: uuid.UUID
+
+
 class JobProgress(BaseModel):
     current: int
     total: int

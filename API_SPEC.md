@@ -190,9 +190,11 @@ Needed because the app must run fully without any Plaid connection — manual ac
 ## 16. Sync & Background Jobs
 | Method | Path | Description |
 |---|---|---|
-| POST | `/sync/transactions` | Force-trigger transaction sync for all (or one) bank, returns job id |
-| POST | `/sync/balances` | Force-trigger balance refresh, returns job id |
+| POST | `/sync/transactions` | Force-trigger transaction sync for all (or one, via `{bank_id}` body) bank, returns job id |
+| POST | `/sync/balances` | Force-trigger balance/holdings refresh for all (or one) bank, returns job id |
 | GET | `/sync/jobs/{job_id}` | Poll job status (`pending`/`running`/`succeeded`/`failed`, progress, error message) — this is what the frontend polls for live sync feedback ([SPEC.md §3](SPEC.md#3-architecture)) |
+
+`POST /banks/{bank_id}/sync` (§3) is the one-button "sync this bank now" action — it runs *both* a balance/holdings refresh and a transaction sync for that bank, still under the `transaction_sync` job type (there's no separate "full sync" entry in the type list below), rather than making the UI fire two jobs for one button.
 
 Scheduled sync (Celery beat calling these same code paths automatically) runs `sync_transactions` and `update_balances` on a schedule; these endpoints expose a manual trigger over the same logic. A third scheduled job, `reconcile_removed_plaid_items`, periodically re-verifies that every soft-deleted `Plaid_item` (`removed_at` set) is actually gone on Plaid's side — see §18. `process_recurring_bills` is **deferred post-v1** (see §11, [ROADMAP.md](ROADMAP.md) Deferred section) and isn't part of the active schedule.
 

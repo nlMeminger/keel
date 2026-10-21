@@ -1,16 +1,18 @@
 import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session as DbSession
 
 from app.auth.models import User
 from app.banks import service
 from app.banks.models import Bank, PlaidItem
-from app.banks.schemas import BankPublic
+from app.banks.schemas import BankPublic, BankSyncResponse
 from app.core.envelope import Envelope, paginate
 from app.database import get_db
 from app.dependencies import PaginationParams, get_current_user, pagination_params
+from app.jobs.service import create_job
+from app.sync.tasks import full_bank_sync_task
 
 router = APIRouter(prefix="/banks", tags=["banks"])
 
@@ -39,3 +41,17 @@ def get_bank(
     bank, item = service.get_bank_with_item(db, user, bank_id)
     account_count = service.count_active_accounts(db, bank.id)
     return {"data": BankPublic.from_bank(bank, item, account_count)}
+
+
+@router.post(
+    "/{bank_id}/sync",
+    response_model=Envelope[BankSyncResponse],
+    status_code=status.HTTP_202_ACCEPTED,
+)
+def sync_bank(
+    bank_id: uuid.UUID, db: DbSession = Depends(get_db), user: User = Depends(get_current_user)
+) -> dict[str, BankSyncResponse]:
+    service.get_bank(db, user, bank_id)  # 404s before enqueueing anything for another user's id
+    job = create_job(db, "transaction_sync", owner_id=user.id)
+    full_bank_sync_task.delay(str(job.id), str(user.id), str(bank_id))
+    return {"data": BankSyncResponse(job_id=job.id)}

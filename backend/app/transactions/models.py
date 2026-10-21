@@ -54,6 +54,9 @@ class Transaction(Base):
     notes: Mapped[str | None] = mapped_column(default=None)
     date: Mapped[date] = mapped_column(Date, index=True)
     pending: Mapped[bool] = mapped_column(default=False, server_default="false")
+    # Plaid's own transaction_id — the stable key sync upserts against (added/modified/
+    # removed from /transactions/sync all key off this). Null for manually-entered rows.
+    plaid_transaction_id: Mapped[str | None] = mapped_column(unique=True, index=True, default=None)
 
     is_transfer: Mapped[bool] = mapped_column(default=False, server_default="false")
     paired_transaction_id: Mapped[uuid.UUID | None] = mapped_column(
