@@ -143,7 +143,7 @@ def pull_accounts_and_holdings(
     Plaid and upserts them into the same Account/Holding tables Phase 4 built for manual
     entry — idempotent on Plaid's own account_id, so this is safe to call again on every
     later balance/transaction sync (7.4/7.5), not just once at link time."""
-    ensure_plaid_enabled(user)
+    ensure_plaid_enabled(db, user)
     client = get_plaid_client()
     access_token = decrypt(item.access_token)
     plaid_accounts = call_plaid(
@@ -273,7 +273,7 @@ def unlink_bank(db: DbSession, user: User, bank_id: uuid.UUID) -> None:
     attempt's commit.
     """
     bank, item = get_bank_with_item(db, user, bank_id)
-    ensure_plaid_enabled(user)
+    ensure_plaid_enabled(db, user)
 
     if item.removed_at is None:
         access_token = decrypt(item.access_token)

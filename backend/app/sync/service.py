@@ -32,7 +32,7 @@ def sync_transactions_for_bank(
     added/modified/removed transactions into the shared Transaction table — Plaid signs
     positive=outflow, the opposite of this app's convention (SPEC.md §5), so every amount is
     flipped on the way in. Persists the new cursor on PlaidItem once the loop completes."""
-    ensure_plaid_enabled(user)
+    ensure_plaid_enabled(db, user)
     client = get_plaid_client()
     access_token = decrypt(item.access_token)
     account_map = {

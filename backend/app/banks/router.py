@@ -53,7 +53,7 @@ def sync_bank(
     bank_id: uuid.UUID, db: DbSession = Depends(get_db), user: User = Depends(get_current_user)
 ) -> dict[str, BankSyncResponse]:
     service.get_bank(db, user, bank_id)  # 404s before enqueueing anything for another user's id
-    ensure_plaid_enabled(user)  # likewise: 403 here, not a 500 surfaced from inside the task
+    ensure_plaid_enabled(db, user)  # likewise: 403/429 here, not a 500 from inside the task
     job = create_job(db, "transaction_sync", owner_id=user.id)
     full_bank_sync_task.delay(str(job.id), str(user.id), str(bank_id))
     return {"data": BankSyncResponse(job_id=job.id)}

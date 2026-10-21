@@ -35,7 +35,7 @@ def _webhook_kwargs() -> dict[str, str]:
 
 def create_link_token_for_new_bank(db: DbSession, user: User) -> tuple[str, datetime]:
     """POST /plaid/link-token (API_SPEC.md §2) — a fresh Link token for adding a new bank."""
-    ensure_plaid_enabled(user)
+    ensure_plaid_enabled(db, user)
     client = get_plaid_client()
     request = LinkTokenCreateRequest(
         client_name=CLIENT_NAME,
@@ -63,7 +63,7 @@ def create_link_token_for_reauth(
     for every update-mode request, not just consumer-report-style products) — /user/create is
     idempotent per client_user_id, so this never creates a duplicate Plaid User on repeat calls.
     """
-    ensure_plaid_enabled(user)
+    ensure_plaid_enabled(db, user)
     _, item = banks_service.get_bank_with_item(db, user, bank_id)
     client = get_plaid_client()
     plaid_user_id = banks_service.call_plaid(
@@ -92,7 +92,7 @@ def exchange_public_token(db: DbSession, user: User, public_token: str) -> tuple
     """POST /plaid/exchange-token (API_SPEC.md §2) — one-time exchange of Link's public_token
     for a real access_token, then creates the Bank/PlaidItem pair backing the rest of Phase 7.
     public_token is single-use; nothing here retries on failure."""
-    ensure_plaid_enabled(user)
+    ensure_plaid_enabled(db, user)
     client = get_plaid_client()
     exchange = banks_service.call_plaid(
         db,

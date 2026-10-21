@@ -1,10 +1,15 @@
 import json
+import uuid
+from datetime import UTC, datetime
 
 import plaid
 from plaid.api import plaid_api
 from plaid.exceptions import ApiException
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session as DbSession
 
 from app.auth.models import User
+from app.banks.models import PlaidAPICall
 from app.config import settings
 from app.core.errors import AppError
 
@@ -24,13 +29,28 @@ def get_plaid_client() -> plaid_api.PlaidApi:
     return plaid_api.PlaidApi(plaid.ApiClient(configuration))
 
 
-def ensure_plaid_enabled(user: User) -> None:
+def calls_this_month(db: DbSession, user_id: uuid.UUID) -> int:
+    """Live count, never a separately-maintained counter (API_SPEC.md §18) — the same
+    PlaidAPICall rows `/admin/plaid/api-stats` aggregates, scoped to the current calendar
+    month in UTC."""
+    month_start = datetime.now(UTC).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    stmt = (
+        select(func.count())
+        .select_from(PlaidAPICall)
+        .where(PlaidAPICall.user_id == user_id, PlaidAPICall.created_at >= month_start)
+    )
+    return db.scalar(stmt) or 0
+
+
+def ensure_plaid_enabled(db: DbSession, user: User) -> None:
     """Every Plaid-calling code path must check this before the call, not after (CLAUDE.md
-    Don't-do-this) — an admin-disabled user gets a clean 403 instead of a call that bypasses
-    the control. monthly_call_limit enforcement joins this once PlaidAPICall exists (7.6) to
-    count calls against; `plaid_enabled` alone needs nothing further and is checked now."""
+    Don't-do-this) — an admin-disabled or over-limit user gets a clean 403/429 instead of a
+    call that bypasses the control."""
     if not user.plaid_enabled:
         raise AppError(403, "plaid_disabled", "Plaid access is disabled for this account.")
+    if user.plaid_monthly_call_limit is not None:
+        if calls_this_month(db, user.id) >= user.plaid_monthly_call_limit:
+            raise AppError(429, "plaid_call_limit_reached", "Monthly Plaid call limit reached.")
 
 
 def plaid_error_body(exc: ApiException) -> dict[str, str]:

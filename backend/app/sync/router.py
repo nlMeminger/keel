@@ -40,7 +40,7 @@ def trigger_transaction_sync(
 ) -> dict[str, SyncTriggerResponse]:
     if body.bank_id is not None:
         banks_service.get_bank(db, user, body.bank_id)  # 404s before enqueueing anything
-    ensure_plaid_enabled(user)
+    ensure_plaid_enabled(db, user)
     job = create_job(db, "transaction_sync", owner_id=user.id)
     sync_transactions_task.delay(
         str(job.id), str(user.id), str(body.bank_id) if body.bank_id else None
@@ -58,7 +58,7 @@ def trigger_balance_sync(
 ) -> dict[str, SyncTriggerResponse]:
     if body.bank_id is not None:
         banks_service.get_bank(db, user, body.bank_id)  # 404s before enqueueing anything
-    ensure_plaid_enabled(user)
+    ensure_plaid_enabled(db, user)
     job = create_job(db, "balance_sync", owner_id=user.id)
     sync_balances_task.delay(str(job.id), str(user.id), str(body.bank_id) if body.bank_id else None)
     return {"data": SyncTriggerResponse(job_id=job.id)}
