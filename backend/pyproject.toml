@@ -17,6 +17,7 @@ dependencies = [
     "redis>=5.1",
     "celery>=5.4",
     "cryptography>=43.0",
+    "plaid-python>=29.0",
 ]
 
 [dependency-groups]
@@ -49,6 +50,11 @@ exclude = ["alembic/"]
 
 [[tool.mypy.overrides]]
 module = "celery.*"
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+# plaid-python ships no py.typed marker / stubs.
+module = "plaid.*"
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]

@@ -23,5 +23,15 @@ class Settings(BaseSettings):
 
     environment: str = "development"
 
+    # Plaid sandbox credentials (https://dashboard.plaid.com/team/keys) — blank by default so
+    # a dev environment without them still boots; routes that need Plaid fail per-call, not
+    # at startup.
+    plaid_client_id: str = ""
+    plaid_secret: str = ""
+    plaid_env: str = "sandbox"
+    # Destination for Plaid's inbound webhooks (API_SPEC.md §17) — must be a publicly
+    # reachable HTTPS URL in real sandbox testing (e.g. via ngrok in local dev).
+    plaid_webhook_url: str = ""
+
 
 settings = Settings()

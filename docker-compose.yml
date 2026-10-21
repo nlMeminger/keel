@@ -7,6 +7,10 @@ x-backend-env: &backend-env
   ENCRYPTION_KEY: ${ENCRYPTION_KEY:-dev-only-insecure-key-change-me-32bytes!}
   CORS_ORIGINS: '["http://localhost:5173"]'
   ENVIRONMENT: development
+  PLAID_CLIENT_ID: ${PLAID_CLIENT_ID:-}
+  PLAID_SECRET: ${PLAID_SECRET:-}
+  PLAID_ENV: ${PLAID_ENV:-sandbox}
+  PLAID_WEBHOOK_URL: ${PLAID_WEBHOOK_URL:-}
 
 x-backend-volumes: &backend-volumes
   - ./backend:/app
