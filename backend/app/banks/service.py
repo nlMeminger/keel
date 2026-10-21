@@ -1,5 +1,7 @@
+import logging
 import uuid
 from collections.abc import Callable
+from datetime import UTC, datetime
 from decimal import Decimal
 from typing import TypeVar
 
@@ -8,7 +10,9 @@ from plaid.exceptions import ApiException
 from plaid.model.account_base import AccountBase
 from plaid.model.accounts_get_request import AccountsGetRequest
 from plaid.model.investments_holdings_get_request import InvestmentsHoldingsGetRequest
-from sqlalchemy import func, select
+from plaid.model.item_get_request import ItemGetRequest
+from plaid.model.item_remove_request import ItemRemoveRequest
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session as DbSession
 
 from app.accounts.models import Account
@@ -16,10 +20,17 @@ from app.auth.models import User
 from app.banks.models import Bank, PlaidAPICall, PlaidItem
 from app.core.encryption import decrypt, encrypt
 from app.core.errors import AppError
-from app.core.plaid_client import ensure_plaid_enabled, get_plaid_client, plaid_error_to_app_error
+from app.core.plaid_client import (
+    ensure_plaid_enabled,
+    get_plaid_client,
+    plaid_error_body,
+    plaid_error_to_app_error,
+)
 from app.holdings.models import Holding
 
 T = TypeVar("T")
+
+logger = logging.getLogger("app.banks")
 
 
 def log_plaid_call(
@@ -247,3 +258,62 @@ def _pull_holdings(
                 )
             )
     db.commit()
+
+
+def unlink_bank(db: DbSession, user: User, bank_id: uuid.UUID) -> None:
+    """DELETE /banks/{bank_id} (API_SPEC.md §3) — calls Plaid's item/remove, then hard-
+    deletes the Bank row while retaining the PlaidItem (removed_at set), so the ghost-item
+    check (7.11) has something to verify against. The bank's own accounts never keep a
+    dangling bank_id (ON DELETE SET NULL) and are explicitly deactivated rather than left
+    looking like live manual accounts.
+
+    Idempotent on removed_at: calling Plaid's item/remove twice on the same access_token is
+    a real error on Plaid's side (ITEM_NOT_FOUND) — skipping the call once already removed
+    avoids ever hitting that, covering a retried request that raced ahead of the first
+    attempt's commit.
+    """
+    bank, item = get_bank_with_item(db, user, bank_id)
+    ensure_plaid_enabled(user)
+
+    if item.removed_at is None:
+        access_token = decrypt(item.access_token)
+        client = get_plaid_client()
+        call_plaid(
+            db,
+            user.id,
+            "item_remove",
+            lambda: client.item_remove(ItemRemoveRequest(access_token=access_token)),
+        )
+        item.removed_at = datetime.now(UTC)
+        db.commit()
+
+    db.execute(update(Account).where(Account.bank_id == bank.id).values(is_active=False))
+    db.delete(bank)
+    db.commit()
+
+
+def reconcile_removed_plaid_items(db: DbSession) -> dict[str, int]:
+    """Scheduled sweep (ROADMAP 7.11) confirming Plaid's side agrees that every
+    `removed_at`-set PlaidItem is actually gone — the other half of the ghost-item check
+    alongside the webhook-side one in app.webhooks.service.handle_webhook, for an item that
+    goes quiet (no more webhooks) instead of still sending them.
+
+    Calls Plaid directly rather than through call_plaid/log_plaid_call: those both require a
+    user_id to attribute the PlaidAPICall row to, but a removed item has no Bank anymore
+    (unlink_bank hard-deletes it) and therefore no owner — there's nobody to bill this call
+    to, so it isn't logged as one.
+    """
+    items = db.scalars(select(PlaidItem).where(PlaidItem.removed_at.is_not(None))).all()
+    client = get_plaid_client()
+    ghost_item_count = 0
+    for item in items:
+        try:
+            client.item_get(ItemGetRequest(access_token=decrypt(item.access_token)))
+        except ApiException as exc:
+            if plaid_error_body(exc).get("error_code") == "ITEM_NOT_FOUND":
+                continue  # Plaid agrees it's gone — expected, no alert.
+        ghost_item_count += 1
+        logger.error(
+            "Plaid still reports removed item %s (db id %s) as active", item.item_id, item.id
+        )
+    return {"checked": len(items), "ghost_items": ghost_item_count}

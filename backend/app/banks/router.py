@@ -57,3 +57,10 @@ def sync_bank(
     job = create_job(db, "transaction_sync", owner_id=user.id)
     full_bank_sync_task.delay(str(job.id), str(user.id), str(bank_id))
     return {"data": BankSyncResponse(job_id=job.id)}
+
+
+@router.delete("/{bank_id}", status_code=status.HTTP_204_NO_CONTENT)
+def unlink_bank(
+    bank_id: uuid.UUID, db: DbSession = Depends(get_db), user: User = Depends(get_current_user)
+) -> None:
+    service.unlink_bank(db, user, bank_id)

@@ -118,3 +118,44 @@ def test_a_second_users_token_cannot_see_the_first_users_bank(
 
     assert client.get(f"/api/v1/banks/{bank.id}", headers=intruder_headers).status_code == 404
     assert client.get("/api/v1/banks", headers=intruder_headers).json()["data"] == []
+
+
+def test_unlink_bank_requires_auth(client: TestClient) -> None:
+    assert client.delete(f"/api/v1/banks/{uuid.uuid4()}").status_code == 401
+
+
+def test_unlink_bank_404_for_nonexistent_bank(
+    client: TestClient, register_and_login: Callable[[str], tuple[str, uuid.UUID]]
+) -> None:
+    token, _user_id = register_and_login("unlink-404@example.com")
+    resp = client.delete(f"/api/v1/banks/{uuid.uuid4()}", headers=_auth_headers(token))
+    assert resp.status_code == 404
+
+
+def test_unlink_bank_404_for_another_users_bank(
+    client: TestClient,
+    register_and_login: Callable[[str], tuple[str, uuid.UUID]],
+    db: OrmSession,
+) -> None:
+    owner_token, owner_id = register_and_login("unlink-owner@example.com")
+    bank = _make_bank(db, owner_id)
+
+    intruder_token, _intruder_id = register_and_login("unlink-intruder@example.com")
+    resp = client.delete(f"/api/v1/banks/{bank.id}", headers=_auth_headers(intruder_token))
+    assert resp.status_code == 404
+
+
+def test_unlink_bank_403s_when_plaid_disabled_for_user(
+    client: TestClient,
+    register_and_login: Callable[[str], tuple[str, uuid.UUID]],
+    db: OrmSession,
+) -> None:
+    token, user_id = register_and_login("unlink-disabled@example.com")
+    bank = _make_bank(db, user_id)
+    user = db.get(User, user_id)
+    assert user is not None
+    user.plaid_enabled = False
+    db.commit()
+
+    resp = client.delete(f"/api/v1/banks/{bank.id}", headers=_auth_headers(token))
+    assert resp.status_code == 403
