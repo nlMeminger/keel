@@ -109,7 +109,8 @@ Full baseline: [SPEC.md §6](SPEC.md#6-security-baseline-non-negotiable-from-day
 - `Plaid_item.access_token` is encrypted at rest (reversible, the app decrypts and reuses it). `Session`/`ApiToken` secrets are hashed (one-way, verify-only). Don't use the wrong one for either.
 
 ## Git
-- Standing authorization: commit as you go, without waiting to be asked each time. The moment a logical unit of work is complete and passing (one migration, one endpoint, one component, one bug fix), commit it before moving to the next one — don't let finished work sit uncommitted while you continue to other changes. This overrides the general "ask before committing" default for this repo specifically.
+- Work on a feature branch per unit of work, cut from `main` (`feat/<slug>`, `fix/<slug>`, `chore/<slug>`) — don't commit directly to `main`.
+- Standing authorization: commit as you go on the feature branch, without waiting to be asked each time. The moment a logical unit of work is complete and passing (one migration, one endpoint, one component, one bug fix), commit it before moving to the next one — don't let finished work sit uncommitted while you continue to other changes. This overrides the general "ask before committing" default for this repo specifically.
 - Don't let changes pile up across multiple unrelated pieces of work before committing any of them — if you notice several completed-but-uncommitted changes already sitting in the working tree when you start, commit them (split appropriately per the atomicity rule below) before adding more on top.
 - No secrets in git, ever — not in a commit, not in history. Any file that can hold one (`.env`, `*.pem`, downloaded service-account JSON, local credential overrides, etc.) goes into `.gitignore` before it's ever created, not added after the fact.
 - If a secret is ever committed anyway, treat it as compromised immediately and rotate it — deleting the line in a later commit does not remove it from history.
@@ -117,7 +118,8 @@ Full baseline: [SPEC.md §6](SPEC.md#6-security-baseline-non-negotiable-from-day
 - Commit frequently and atomically: each commit is one complete, reviewable change — one migration, one endpoint, one component — small enough that `git revert` on it cleanly undoes just that change and nothing else.
 - Don't bundle unrelated changes into one commit (e.g. a feature plus an unrelated formatting pass); split them so each stays independently revertable.
 - Every commit should leave the repo in a working state (tests pass). Reversibility only holds if the commit you'd revert *to* also worked.
-- This standing authorization covers local commits only — pushing to a remote, force-pushing, or amending a commit still follows the normal confirm-first rules.
+- When the branch's work is complete and passing (see Definition of done below), merge it into `main` locally. This local merge is covered by the same standing authorization as commits — no need to ask first. Delete the merged branch locally afterward to keep the branch list clean.
+- This standing authorization covers local commits and local merges only — pushing to GitHub (a feature branch or `main`), force-pushing, or amending a published commit still follows the normal confirm-first rules: ask in chat and get an explicit go-ahead each time before pushing.
 
 ## Don't do this
 Domain-specific traps this app invites, not generic advice:
