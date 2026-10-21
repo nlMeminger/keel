@@ -7,8 +7,10 @@ from collections.abc import Callable
 
 import pytest
 from fastapi.testclient import TestClient
+from plaid.model.accounts_get_request import AccountsGetRequest
 from plaid.model.products import Products
 from plaid.model.sandbox_public_token_create_request import SandboxPublicTokenCreateRequest
+from sqlalchemy import text
 from sqlalchemy.orm import Session as OrmSession
 
 from app.banks.models import Bank, PlaidItem
@@ -85,8 +87,35 @@ def test_exchange_token_creates_bank_with_encrypted_access_token(
     assert decrypted.startswith("access-")
 
     live_client = get_plaid_client()
-    from plaid.model.accounts_get_request import AccountsGetRequest
+    accounts_response = live_client.accounts_get(AccountsGetRequest(access_token=decrypted))
+    assert len(accounts_response.accounts) > 0
 
+
+@requires_sandbox
+def test_access_token_is_encrypted_on_the_raw_postgres_row(
+    client: TestClient, register_and_login: Callable[[str], tuple[str, uuid.UUID]], db: OrmSession
+) -> None:
+    """ROADMAP 7.7 — reads the column via raw SQL, not the ORM-materialized attribute, so
+    there's no doubt this is what's actually on disk rather than something cached in the
+    SQLAlchemy session's identity map."""
+    token, _user_id = register_and_login("raw-row-check@example.com")
+    bank_id = client.post(
+        "/api/v1/plaid/exchange-token",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"public_token": _sandbox_public_token()},
+    ).json()["data"]["id"]
+
+    bank = db.get(Bank, uuid.UUID(bank_id))
+    assert bank is not None
+    raw_access_token = db.execute(
+        text("SELECT access_token FROM plaid_items WHERE id = :id"), {"id": bank.plaid_item_id}
+    ).scalar_one()
+
+    assert not raw_access_token.startswith("access-")
+    decrypted = decrypt(raw_access_token)
+    assert decrypted.startswith("access-")
+
+    live_client = get_plaid_client()
     accounts_response = live_client.accounts_get(AccountsGetRequest(access_token=decrypted))
     assert len(accounts_response.accounts) > 0
 
