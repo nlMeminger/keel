@@ -155,7 +155,7 @@ Manual create/edit/payment-tracking ships in v1. Scheduled auto-detection (`proc
 | Method | Path | Description |
 |---|---|---|
 | GET | `/notifications` | List notifications (filter: `unread_only`). Each has `type` (free-form string), `title`, `body`, `related_type`/`related_id` (nullable — points back at whatever triggered it, e.g. a `Bank`), `read_at` (nullable timestamp) |
-| PATCH | `/notifications/{id}` | Mark read/unread (sets or clears `read_at`) |
+| PATCH | `/notifications/{id}` | `{ read: bool }` — sets or clears `read_at` |
 | DELETE | `/notifications/{id}` | Dismiss |
 
 No `POST` — notifications are only ever created server-side. v1 triggers: a budget crossing a usage threshold (§9), a savings goal crossing a progress milestone (§10), and a bank needing reauth (from Plaid webhook/sync handling, §17). Recurring-bill reminders are deferred post-v1 along with auto-detection (§11, [ROADMAP.md](ROADMAP.md) Deferred section).

@@ -15,6 +15,7 @@ from app.holdings import models as holdings_models  # noqa: F401
 from app.jobs import models as jobs_models  # noqa: F401
 from app.merchants import models as merchants_models  # noqa: F401
 from app.metrics import models as metrics_models  # noqa: F401
+from app.notifications import models as notifications_models  # noqa: F401
 from app.transactions import models as transactions_models  # noqa: F401
 
 # Import every domain's models module here so autogenerate can see their tables.
