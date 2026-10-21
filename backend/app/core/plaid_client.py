@@ -33,16 +33,23 @@ def ensure_plaid_enabled(user: User) -> None:
         raise AppError(403, "plaid_disabled", "Plaid access is disabled for this account.")
 
 
+def plaid_error_body(exc: ApiException) -> dict[str, str]:
+    """Parses a raw Plaid ApiException's body JSON — shared by plaid_error_to_app_error and
+    the ghost-item reconciliation sweep (7.11), which only needs the error_code, not a full
+    AppError, since there's no request to respond to."""
+    if not exc.body:
+        return {}
+    try:
+        return dict(json.loads(exc.body))
+    except ValueError:
+        return {}
+
+
 def plaid_error_to_app_error(exc: ApiException) -> AppError:
     """Translates a raw Plaid ApiException into the app's {error:{code,message}} envelope.
     ITEM_LOGIN_REQUIRED surfaces as 409 so the frontend can prompt reauth; anything else is a
     502 — an upstream failure, not something the caller did wrong."""
-    payload: dict[str, str] = {}
-    if exc.body:
-        try:
-            payload = json.loads(exc.body)
-        except ValueError:
-            payload = {}
+    payload = plaid_error_body(exc)
     error_code = payload.get("error_code", "plaid_error")
     message = payload.get("error_message", "Plaid request failed.")
     if error_code == "ITEM_LOGIN_REQUIRED":

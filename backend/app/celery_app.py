@@ -8,7 +8,7 @@ celery_app = Celery(
     "moneyapp",
     broker=settings.celery_broker_url,
     backend=settings.celery_result_backend,
-    include=["app.jobs.tasks", "app.category_rules.tasks", "app.sync.tasks"],
+    include=["app.jobs.tasks", "app.category_rules.tasks", "app.sync.tasks", "app.banks.tasks"],
 )
 
 celery_app.conf.update(
@@ -32,5 +32,12 @@ celery_app.conf.beat_schedule = {
     "sync-balances": {
         "task": "sync.scheduled_balances",
         "schedule": timedelta(hours=1),
+    },
+    # Ghost-item check's scheduled half (ROADMAP 7.11) — the webhook-side check only catches
+    # an item that keeps sending webhooks; this catches one that's gone quiet instead. Daily
+    # is enough: a stale removed item accruing Plaid cost is a slow leak, not an emergency.
+    "reconcile-removed-plaid-items": {
+        "task": "banks.reconcile_removed_plaid_items",
+        "schedule": timedelta(hours=24),
     },
 }
