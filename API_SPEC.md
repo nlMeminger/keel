@@ -220,7 +220,7 @@ All `/admin/*` routes require `role=admin`, checked by a separate dependency fro
 | GET | `/admin/users` | List all users (filter: `role`, `status`) |
 | POST | `/admin/users` | Admin-provision a new user (email, name, role; initial password set via the same flow as reset below) |
 | GET | `/admin/users/{user_id}` | Account metadata — status, created_at, last_login, linked-bank count, Plaid access settings + this month's call count. **Not** their transactions/balances; full financial-data access isn't part of this surface (see note below) |
-| PATCH | `/admin/users/{user_id}` | Edit profile fields (name, email, timezone), role, or status (active/suspended). Rejects demoting/suspending the last remaining admin |
+| PATCH | `/admin/users/{user_id}` | Edit profile fields (name, email, timezone), role, or status (active/suspended). Rejects demoting the last remaining admin, and rejects an admin suspending their own account |
 | POST | `/admin/users/{user_id}/reset-password` | Admin sets a new password directly (or omit the value to auto-generate one). Forces `must_change_password` on next login and revokes all of that user's sessions (§1) |
 | DELETE | `/admin/users/{user_id}` | Hard-delete a user and their data. Requires `{ "confirm": true }`; irreversible. First calls Plaid's `item/remove` for every one of the user's linked banks (same as `DELETE /banks/{bank_id}`, §3) so nothing keeps accruing Plaid API cost after the user is gone |
 | POST | `/admin/users/{user_id}/revoke-sessions` | Force logout everywhere (invalidate all refresh tokens) |
