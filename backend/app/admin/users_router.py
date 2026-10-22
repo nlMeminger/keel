@@ -80,6 +80,7 @@ def update_user(
     updated = service.update_user(
         db,
         user,
+        admin.id,
         name=body.name,
         email=body.email,
         timezone=body.timezone,

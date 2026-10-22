@@ -159,6 +159,42 @@ def test_update_user_allows_demoting_when_another_admin_remains(
     assert resp.json()["data"]["role"] == "user"
 
 
+def test_update_user_rejects_self_suspend(
+    client: TestClient,
+    register_and_login: Callable[[str], tuple[str, uuid.UUID]],
+    db: OrmSession,
+) -> None:
+    admin_token, admin_id = _make_admin(
+        client, register_and_login, db, "self-suspend-a@example.com"
+    )
+    _make_admin(client, register_and_login, db, "self-suspend-b@example.com")
+
+    resp = client.patch(
+        f"/api/v1/admin/users/{admin_id}",
+        json={"status": "suspended"},
+        headers=_auth_headers(admin_token),
+    )
+    assert resp.status_code == 409
+    assert resp.json()["error"]["code"] == "self_suspend"
+
+
+def test_update_user_allows_suspending_a_different_admin(
+    client: TestClient,
+    register_and_login: Callable[[str], tuple[str, uuid.UUID]],
+    db: OrmSession,
+) -> None:
+    admin_token, _ = _make_admin(client, register_and_login, db, "suspend-other-a@example.com")
+    _, other_admin_id = _make_admin(client, register_and_login, db, "suspend-other-b@example.com")
+
+    resp = client.patch(
+        f"/api/v1/admin/users/{other_admin_id}",
+        json={"status": "suspended"},
+        headers=_auth_headers(admin_token),
+    )
+    assert resp.status_code == 200
+    assert resp.json()["data"]["status"] == "suspended"
+
+
 def test_reset_password_autogenerates_and_revokes_sessions(
     client: TestClient,
     register_and_login: Callable[[str], tuple[str, uuid.UUID]],

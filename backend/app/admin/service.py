@@ -103,6 +103,7 @@ def _reject_if_last_admin(db: DbSession, user: User, action: str) -> None:
 def update_user(
     db: DbSession,
     user: User,
+    acting_admin_id: uuid.UUID,
     name: str | None,
     email: str | None,
     timezone: str | None,
@@ -112,7 +113,12 @@ def update_user(
     if role is not None and role != user.role:
         _reject_if_last_admin(db, user, "demote")
     if status is not None and status != "active":
-        _reject_if_last_admin(db, user, "suspend")
+        # An admin can only ever be the system's last remaining admin if they're also the
+        # one making this call (require_admin means the caller is always an admin, so if
+        # there's exactly one admin, caller and target are the same user) — so blocking
+        # self-suspension here already covers the last-admin-suspend case too.
+        if user.id == acting_admin_id:
+            raise AppError(409, "self_suspend", "Admins cannot suspend their own account.")
 
     if name is not None:
         user.name = name
